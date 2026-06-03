@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OpsAI — Enterprise Operations Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f7f6f3;--bg2:#efefeb;--bg3:#e8e7e2;--surface:#ffffff;--surface2:#f3f2ee;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#0f0e0c;--text2:#5a5851;--text3:#9a9890;
+  --accent:#1a1916;--gold:#b8963e;--gold2:#d4af5a;--gold-bg:rgba(184,150,62,0.08);
+  --green:#2d6a4f;--green-bg:rgba(45,106,79,0.08);
+  --red:#9b2335;--red-bg:rgba(155,35,53,0.08);
+  --amber:#92600a;--amber-bg:rgba(146,96,10,0.08);
+  --blue:#1a4a7a;--blue-bg:rgba(26,74,122,0.08);
+  --radius:10px;--radius-lg:16px;--radius-xl:24px;
+  --font-display:"DM Serif Display",Georgia,serif;
+  --font-body:"DM Sans",system-ui,sans-serif;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.10);
+  --tr:0.2s cubic-bezier(0.4,0,0.2,1);
+}
+[data-theme="dark"]{
+  --bg:#0e0d0b;--bg2:#161512;--bg3:#1d1c18;--surface:#181714;--surface2:#201f1b;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0ede6;--text2:#9a9485;--text3:#5a5648;
+  --gold:#c9a84c;--gold2:#e8c96a;--gold-bg:rgba(201,168,76,0.10);
+  --green:#4caf82;--green-bg:rgba(76,175,130,0.08);
+  --red:#e05070;--red-bg:rgba(224,80,112,0.08);
+  --amber:#d4922a;--amber-bg:rgba(212,146,42,0.08);
+  --blue:#5a9fd4;--blue-bg:rgba(90,159,212,0.08);
+  --shadow:0 1px 3px rgba(0,0,0,0.3),0 4px 16px rgba(0,0,0,0.2);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font-body);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:var(--font-body);cursor:pointer}
+input,textarea,select{font-family:var(--font-body)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.screen{display:none;width:100%;min-height:100vh}.screen.active{display:flex}
+.fade-in{animation:fadeIn .3s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes blink{50%{opacity:0}}
+
+/* LOADING */
+#global-loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:12px}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+
+/* SETUP */
+#screen-setup{align-items:center;justify-content:center;padding:24px}
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:44px 48px;max-width:660px;width:100%;box-shadow:var(--shadow-lg)}
+.setup-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.setup-logo-mark{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.setup-card h2{font-family:var(--font-display);font-size:24px;letter-spacing:-.02em;margin-bottom:6px}
+.setup-card .sub{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.6}
+.setup-step{display:flex;gap:14px;margin-bottom:18px}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#f0ede6;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-body{flex:1}
+.step-title{font-size:13px;font-weight:500;margin-bottom:3px}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.step-desc a{color:var(--gold);font-weight:500}
+.sql-block{background:var(--bg2);border-radius:var(--radius);padding:10px 14px;font-size:11px;font-family:monospace;color:var(--text2);margin-top:6px;line-height:1.7;white-space:pre-wrap;max-height:130px;overflow-y:auto;border:1px solid var(--border)}
+.setup-fields{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.setup-field label{display:block;font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.setup-field input{width:100%;padding:10px 13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;transition:border-color var(--tr)}
+.setup-field input:focus{border-color:var(--gold)}
+.err-box{background:var(--red-bg);color:var(--red);border:1px solid rgba(155,35,53,0.15);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+
+/* AUTH */
+#screen-auth{align-items:stretch}
+.auth-left{flex:1;background:var(--accent);display:flex;flex-direction:column;justify-content:space-between;padding:52px 56px;position:relative;overflow:hidden}
+.auth-left::before{content:"";position:absolute;top:-80px;right:-80px;width:400px;height:400px;border-radius:50%;border:1px solid rgba(255,255,255,0.05)}
+.auth-left::after{content:"";position:absolute;bottom:-120px;left:-60px;width:500px;height:500px;border-radius:50%;border:1px solid rgba(255,255,255,0.03)}
+.auth-logo{display:flex;align-items:center;gap:12px;z-index:1;position:relative}
+.auth-logo-mark{width:36px;height:36px;border-radius:9px;background:var(--gold);display:flex;align-items:center;justify-content:center}
+.auth-logo-name{font-family:var(--font-display);font-size:20px;color:#f0ede6;letter-spacing:-.02em}
+.auth-logo-tag{font-size:10px;color:rgba(240,237,230,0.4);letter-spacing:.12em;text-transform:uppercase;margin-top:1px}
+.auth-hero{z-index:1;position:relative}
+.auth-hero h1{font-family:var(--font-display);font-size:42px;color:#f0ede6;line-height:1.15;letter-spacing:-.02em;margin-bottom:16px}
+.auth-hero h1 em{color:var(--gold2);font-style:italic}
+.auth-hero p{font-size:15px;color:rgba(240,237,230,0.55);line-height:1.7;max-width:360px}
+.auth-feats{display:flex;flex-direction:column;gap:12px;z-index:1;position:relative}
+.auth-feat{display:flex;align-items:center;gap:12px;font-size:13px;color:rgba(240,237,230,0.6)}
+.auth-feat-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.auth-right{width:480px;display:flex;flex-direction:column;justify-content:center;padding:60px 52px;background:var(--surface)}
+.auth-right h2{font-family:var(--font-display);font-size:28px;letter-spacing:-.02em;margin-bottom:6px}
+.auth-right .sub{font-size:13px;color:var(--text2);margin-bottom:36px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase}
+.field input{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:14px;outline:none;transition:border-color var(--tr),box-shadow var(--tr)}
+.field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg)}
+.btn-primary{width:100%;padding:13px;background:var(--accent);color:#f0ede6;border:none;border-radius:var(--radius);font-size:14px;font-weight:500;transition:opacity var(--tr);margin-top:4px}
+.btn-primary:hover{opacity:.88}.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.auth-switch{margin-top:20px;text-align:center;font-size:13px;color:var(--text2)}
+.auth-switch a{color:var(--gold);font-weight:500;cursor:pointer}
+.lang-row{display:flex;gap:6px;margin-bottom:28px}
+.lang-pill{padding:5px 14px;border-radius:20px;border:1px solid var(--border2);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:all var(--tr);background:transparent}
+.lang-pill.active{background:var(--accent);color:#f0ede6;border-color:transparent}
+
+/* ONBOARDING */
+#screen-onboarding{align-items:center;justify-content:center;padding:40px 20px}
+.ob-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:52px 56px;max-width:600px;width:100%;box-shadow:var(--shadow-lg)}
+.ob-dots{display:flex;gap:6px;margin-bottom:36px}
+.ob-dot{height:3px;border-radius:2px;transition:all var(--tr)}
+.ob-card h2{font-family:var(--font-display);font-size:26px;letter-spacing:-.02em;margin-bottom:8px}
+.ob-card .sub{font-size:14px;color:var(--text2);margin-bottom:32px;line-height:1.6}
+.ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+.ob-choice{border:1px solid var(--border2);border-radius:var(--radius-lg);padding:18px 20px;cursor:pointer;transition:all var(--tr)}
+.ob-choice:hover{background:var(--bg2)}.ob-choice.sel{border-color:var(--gold);background:var(--gold-bg)}
+.ob-choice .oc-icon{font-size:22px;margin-bottom:10px;display:block}
+.ob-choice .oc-title{font-size:13px;font-weight:500;margin-bottom:3px}
+.ob-nav{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.btn-ghost{padding:11px 22px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;background:transparent;color:var(--text2);transition:all var(--tr)}
+.btn-ghost:hover{background:var(--bg2)}
+.btn-accent{padding:11px 28px;border-radius:var(--radius);font-size:13px;font-weight:500;background:var(--accent);color:#f0ede6;border:none;transition:all var(--tr)}
+.btn-accent:hover{opacity:.86}.btn-accent:disabled{opacity:.5;cursor:not-allowed}
+.ob-input{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:14px;outline:none;transition:border-color var(--tr);margin-bottom:12px}
+.ob-input:focus{border-color:var(--gold)}
+
+/* DASHBOARD */
+#screen-dashboard{flex-direction:column}
+.topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;gap:16px}
+.top-brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.top-logo{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.top-logo svg{width:14px;height:14px}
+.top-name{font-family:var(--font-display);font-size:16px;letter-spacing:-.02em}
+.top-tag{font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-left:2px}
+.top-center{display:flex;align-items:center;gap:4px;background:var(--bg2);border-radius:22px;padding:4px;border:1px solid var(--border)}
+.top-tab{padding:5px 16px;border-radius:18px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all var(--tr)}
+.top-tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.top-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.top-lang{display:flex;gap:2px;background:var(--bg2);border-radius:8px;padding:2px;border:1px solid var(--border)}
+.tlang{font-size:10px;font-weight:500;padding:4px 8px;border-radius:6px;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all var(--tr);letter-spacing:.04em}
+.tlang.active{background:var(--surface);color:var(--text)}
+.theme-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all var(--tr)}
+.theme-btn:hover{background:var(--bg2)}
+.ai-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--green);background:var(--green-bg);padding:4px 10px;border-radius:20px;border:1px solid rgba(45,106,79,0.15)}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.uavatar{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#f0ede6;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0}
+.dash-body{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px)}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-sec{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:.10em;text-transform:uppercase;padding:20px 18px 8px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;border-left:2px solid transparent;font-size:13px;color:var(--text2);transition:all var(--tr)}
+.sb-item:hover{background:var(--bg2);color:var(--text)}
+.sb-item.active{background:var(--bg2);color:var(--text);border-left-color:var(--gold);font-weight:500}
+.sb-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}.sb-item.active svg{opacity:1}
+.sb-badge{margin-left:auto;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px}
+.sb-badge.warn{background:var(--red-bg);color:var(--red)}
+.sb-footer{margin-top:auto;padding:16px 18px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;border-radius:var(--radius);transition:background var(--tr)}
+.sb-user:hover{background:var(--bg2)}
+.sb-av{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#f0ede6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:500;line-height:1.3}
+.sb-urole{font-size:11px;color:var(--text3)}
+.sb-logout{font-size:11px;color:var(--text3);margin-top:8px;padding:0 8px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.sb-logout:hover{color:var(--red)}
+.main{flex:1;overflow-y:auto;padding:28px 32px;background:var(--bg)}
+.panel-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.panel-h{font-family:var(--font-display);font-size:22px;letter-spacing:-.02em}
+.panel-sub{font-size:13px;color:var(--text2);margin-top:2px}
+.btn-sm{font-size:12px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all var(--tr);display:inline-flex;align-items:center;gap:5px}
+.btn-sm:hover{background:var(--bg2);color:var(--text)}
+.btn-sm.gold{background:var(--accent);color:#f0ede6;border-color:transparent}
+.btn-sm.gold:hover{opacity:.85}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;transition:border-color var(--tr)}
+.mc:hover{border-color:var(--gold)}
+.mc-lbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.mc-val{font-family:var(--font-display);font-size:30px;letter-spacing:-.03em;line-height:1}
+.mc-d{font-size:11px;margin-top:6px}.pos{color:var(--green)}.neg{color:var(--red)}.neu{color:var(--text3)}
+.charts-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px}
+.chart-card-full{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;margin-bottom:16px}
+.chart-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.chart-title{font-size:13px;font-weight:500}
+.chart-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.chart-wrap{position:relative;height:180px}
+.chart-wrap-lg{position:relative;height:220px}
+.perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+.card-body{padding:16px 20px}
+.task-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.task-item:last-child{border-bottom:none}
+.t-check{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--tr)}
+.t-check:hover{border-color:var(--gold)}.t-check.done{background:var(--green-bg);border-color:var(--green)}
+.t-check.done::after{content:"✓";font-size:9px;color:var(--green)}
+.t-content{flex:1;min-width:0}
+.t-name{font-size:13px;line-height:1.4}.t-name.done{text-decoration:line-through;color:var(--text3)}
+.t-meta{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.tag{font-size:10px;font-weight:500;border-radius:5px;padding:2px 7px}
+.tag-h{background:var(--red-bg);color:var(--red)}.tag-m{background:var(--amber-bg);color:var(--amber)}.tag-l{background:var(--green-bg);color:var(--green)}
+.tag-date{font-size:11px;color:var(--text3)}
+.t-actions{display:flex;gap:4px;opacity:0;transition:opacity var(--tr)}.task-item:hover .t-actions{opacity:1}
+.t-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all var(--tr)}
+.t-btn.del:hover{background:var(--red-bg);color:var(--red);border-color:transparent}
+.add-row{display:flex;gap:8px;margin-top:14px}
+.add-row input{flex:1;padding:9px 13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;transition:border-color var(--tr)}
+.add-row input:focus{border-color:var(--gold)}
+.add-row select{padding:9px 10px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text2);font-size:12px;outline:none;cursor:pointer}
+.ai-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.ai-tab{font-size:11px;padding:5px 13px;border-radius:20px;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--font-body);transition:all var(--tr)}
+.ai-tab.active{background:var(--accent);color:#f0ede6;border-color:transparent}
+.ai-hint{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
+.ai-ta{width:100%;padding:12px 14px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;line-height:1.6;resize:none;outline:none;transition:border-color var(--tr);font-family:var(--font-body);min-height:90px}
+.ai-ta:focus{border-color:var(--gold)}
+.ai-resp{background:var(--bg2);border-radius:var(--radius);padding:14px 16px;font-size:13px;line-height:1.75;color:var(--text2);min-height:64px;white-space:pre-wrap;margin-top:14px;border:1px solid var(--border)}
+.ai-resp.loading::after{content:"▋";animation:blink .7s step-end infinite;color:var(--gold)}
+.ai-resp.filled{color:var(--text)}
+.ins-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}.ins-item:last-child{border-bottom:none}
+.ins-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.ins-body{flex:1}.ins-title{font-size:12px;font-weight:500;margin-bottom:2px}.ins-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.ig{background:var(--green-bg);color:var(--green)}.ia{background:var(--amber-bg);color:var(--amber)}.ib{background:var(--blue-bg);color:var(--blue)}
+.meet-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}.meet-item:last-child{border-bottom:none}
+.meet-date{font-size:11px;color:var(--text3);min-width:64px;margin-top:2px}
+.meet-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.meet-prev{font-size:12px;color:var(--text2);line-height:1.4}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.set-row:last-child{border-bottom:none}
+.set-lbl{font-size:13px;font-weight:500}.set-desc{font-size:12px;color:var(--text2);margin-top:1px}
+.set-row input[type=text]{width:280px;padding:8px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none}
+.set-row input[type=text]:focus{border-color:var(--gold)}
+.toggle{position:relative;width:38px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-sl{position:absolute;inset:0;background:var(--border2);border-radius:11px;cursor:pointer;transition:background var(--tr)}
+.toggle-sl::before{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform var(--tr)}
+.toggle input:checked + .toggle-sl{background:var(--gold)}
+.toggle input:checked + .toggle-sl::before{transform:translateX(16px)}
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+.empty svg{width:40px;height:40px;margin:0 auto 12px;opacity:.3;display:block}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--accent);color:#f0ede6;padding:12px 20px;border-radius:var(--radius);font-size:13px;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+textarea{width:100%;font-size:13px;padding:10px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font-body);resize:none;outline:none}
+textarea:focus{border-color:var(--gold)}
+@media(max-width:900px){.top-center{display:none}}
+@media(max-width:600px){
+  #screen-auth{flex-direction:column}
+  .auth-left{padding:28px 24px 24px;min-height:auto}
+  .auth-left::before,.auth-left::after{display:none}
+  .auth-hero h1{font-size:26px}.auth-feats{display:none}
+  .auth-right{width:100%;padding:28px 24px 40px}
+  .ob-card{padding:32px 24px}.ob-grid{grid-template-columns:1fr}
+  .setup-card{padding:28px 20px}
+  .topbar{padding:0 14px;gap:8px}
+  .top-tag,.top-name{display:none}
+  .tlang{padding:3px 6px;font-size:10px}
+  .ai-badge span{display:none}
+  .top-center{display:none}
+  .dash-body{flex-direction:column-reverse;height:auto}
+  .sidebar{width:100%;height:56px;flex-direction:row;border-right:none;border-top:1px solid var(--border);padding:0;overflow-x:auto;overflow-y:hidden;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--surface)}
+  .sb-sec,.sb-footer{display:none}
+  .sb-item{flex-direction:column;padding:8px 10px 6px;border-left:none;border-top:2px solid transparent;font-size:9px;gap:3px;flex:1;justify-content:center;align-items:center;min-width:48px}
+  .sb-item.active{border-left:none;border-top-color:var(--gold)}
+  .sb-item svg{width:18px;height:18px}.sb-badge{display:none}
+  .main{padding:16px 14px 80px;height:auto}
+  .metrics{grid-template-columns:1fr 1fr;gap:8px}
+  .mc{padding:12px}.mc-val{font-size:22px}
+  .charts-grid,.perf-grid{grid-template-columns:1fr}
+  .chart-wrap{height:160px}.chart-wrap-lg{height:180px}
+  .add-row{flex-wrap:wrap}.add-row input{width:100%}.add-row select{flex:1}
+  .set-row{flex-direction:column;gap:10px;align-items:flex-start}
+  .set-row input[type=text]{width:100%}
+  .panel-row{flex-direction:column;gap:10px;align-items:flex-start}
+  .toast{bottom:72px;right:14px;left:14px;text-align:center}
+}
+</style>
+</head>
+<body>
+<div id="global-loading"><div class="spinner"></div><div style="font-size:13px;color:var(--text2)">Loading OpsAI...</div></div>
+
+<!-- SETUP -->
+<div id="screen-setup" class="screen">
+<div class="setup-card fade-in">
+  <div class="setup-logo">
+    <div class="setup-logo-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z" stroke="#f0ede6" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="9" r="2" fill="#f0ede6"/></svg></div>
+    <div style="font-family:var(--font-display);font-size:18px;letter-spacing:-.02em">OpsAI <span style="font-size:11px;color:var(--text3);font-family:var(--font-body);font-weight:400">Enterprise</span></div>
+  </div>
+  <h2>Connect your database</h2>
+  <p class="sub">OpsAI uses Supabase to store all data securely in the cloud. Free, no credit card required. Follow the 3 steps below once.</p>
+  <div class="setup-step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Create a free Supabase account</div><div class="step-desc">Go to <a href="https://supabase.com" target="_blank">supabase.com</a>, sign up (GitHub or Google), create a new project and wait ~2 min for it to be ready.</div></div></div>
+  <div class="setup-step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Run this SQL in your project</div><div class="step-desc">Supabase dashboard &rarr; <b>SQL Editor</b> &rarr; <b>New query</b> &rarr; paste and run:</div>
+    <div class="sql-block" id="sql-block">create table if not exists public.profiles(id uuid references auth.users on delete cascade primary key,email text,name text default '',company text default '',workspace text default '',lang text default 'en',theme text default 'light',onboarding_done boolean default false,ai_prio_ct int default 0,sessions int default 7,created_at timestamptz default now());
+alter table public.profiles enable row level security;
+create policy "own profile" on public.profiles for all using(auth.uid()=id);
+create table if not exists public.tasks(id text primary key default gen_random_uuid()::text,user_id uuid references auth.users on delete cascade not null,name text not null,prio text default 'm',date text default 'this-week',done boolean default false,created_at timestamptz default now());
+alter table public.tasks enable row level security;
+create policy "own tasks" on public.tasks for all using(auth.uid()=user_id);
+create table if not exists public.meetings(id text primary key default gen_random_uuid()::text,user_id uuid references auth.users on delete cascade not null,title text default 'Meeting',transcript text default '',summary text default '',created_at timestamptz default now());
+alter table public.meetings enable row level security;
+create policy "own meetings" on public.meetings for all using(auth.uid()=user_id);
+create table if not exists public.shared_settings(key text primary key,value text default '');
+alter table public.shared_settings enable row level security;
+create policy "read shared" on public.shared_settings for select using(true);
+create policy "write shared" on public.shared_settings for all using(true);
+create table if not exists public.weekly_stats(user_id uuid references auth.users on delete cascade,day_index int,count int default 0,primary key(user_id,day_index));
+alter table public.weekly_stats enable row level security;
+create policy "own stats" on public.weekly_stats for all using(auth.uid()=user_id);</div>
+    <button class="btn-sm" style="margin-top:8px" onclick="copySql()">&#128203; Copy SQL</button>
+  </div></div>
+  <div class="setup-step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Get your Project URL and anon key</div><div class="step-desc">Supabase &rarr; <b>Settings</b> &rarr; <b>API</b>. Copy <b>Project URL</b> and <b>anon public</b> key below.</div></div></div>
+  <div id="setup-err" class="err-box"></div>
+  <div class="setup-fields">
+    <div class="setup-field"><label>Project URL</label><input type="text" id="setup-url" placeholder="https://xxxxxxxxxxxx.supabase.co"/></div>
+    <div class="setup-field"><label>Anon Public Key</label><input type="text" id="setup-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."/></div>
+  </div>
+  <button class="btn-accent" style="width:100%" onclick="doSetup()" id="btn-setup">Connect &amp; continue</button>
+  <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text3)">Credentials stored only in this browser. Nothing sent to third parties.</div>
+</div>
+</div>
+
+<!-- AUTH -->
+<div id="screen-auth" class="screen">
+  <div class="auth-left">
+    <div class="auth-logo">
+      <div class="auth-logo-mark"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z" stroke="#0f0e0c" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="9" r="2.5" fill="#0f0e0c"/></svg></div>
+      <div><div class="auth-logo-name">OpsAI</div><div class="auth-logo-tag">Enterprise</div></div>
+    </div>
+    <div class="auth-hero">
+      <h1 id="hero-h1">Operations,<br/>driven by <em>intelligence.</em></h1>
+      <p id="hero-p">A unified platform for modern teams to manage tasks, analyze performance, and automate decisions.</p>
+    </div>
+    <div class="auth-feats">
+      <div class="auth-feat"><span class="auth-feat-dot"></span><span id="af1">AI task prioritization &amp; smart scheduling</span></div>
+      <div class="auth-feat"><span class="auth-feat-dot"></span><span id="af2">Meeting intelligence &amp; automatic summaries</span></div>
+      <div class="auth-feat"><span class="auth-feat-dot"></span><span id="af3">Performance analytics with actionable insights</span></div>
+      <div class="auth-feat"><span class="auth-feat-dot"></span><span id="af4">Available in English, Spanish &amp; Portuguese</span></div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="lang-row">
+      <div class="lang-pill active" onclick="authLang('en',this)">English</div>
+      <div class="lang-pill" onclick="authLang('es',this)">Espa&ntilde;ol</div>
+      <div class="lang-pill" onclick="authLang('pt',this)">Portugu&ecirc;s</div>
+    </div>
+    <div id="auth-err" class="err-box"></div>
+    <div id="form-login">
+      <h2 id="auth-title">Welcome back</h2>
+      <p class="sub" id="auth-sub">Sign in to your workspace</p>
+      <div class="field"><label id="lbl-email">Email</label><input type="email" id="l-email" placeholder="you@company.com"/></div>
+      <div class="field"><label id="lbl-pass">Password</label><input type="password" id="l-pass" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()"/></div>
+      <button class="btn-primary" id="btn-login" onclick="doLogin()">Sign in</button>
+      <div class="auth-switch" id="auth-sw">Don&apos;t have an account? <a onclick="showReg()">Create one</a></div>
+    </div>
+    <div id="form-reg" style="display:none">
+      <h2 id="reg-title">Create your account</h2>
+      <p class="sub" id="reg-sub">Start your free workspace</p>
+      <div class="field"><label id="lbl-name">Full name</label><input type="text" id="r-name" placeholder="Your name"/></div>
+      <div class="field"><label id="lbl-remail">Email</label><input type="email" id="r-email" placeholder="you@company.com"/></div>
+      <div class="field"><label id="lbl-rpass">Password</label><input type="password" id="r-pass" placeholder="Min. 6 characters" onkeydown="if(event.key===&#39;Enter&#39;)doRegister()"/></div>
+      <button class="btn-primary" id="btn-reg" onclick="doRegister()">Create account</button>
+      <div class="auth-switch"><a onclick="showLogin()">&#8592; Back to sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="screen-onboarding" class="screen">
+  <div class="ob-card fade-in">
+    <div class="ob-dots" id="ob-dots"></div>
+    <div id="ob-content"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="screen-dashboard" class="screen">
+  <div class="topbar">
+    <div class="top-brand">
+      <div class="top-logo"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z"/><circle cx="9" cy="9" r="2" fill="currentColor" stroke="none"/></svg></div>
+      <span class="top-name">OpsAI</span><span class="top-tag">Enterprise</span>
+    </div>
+    <div class="top-center">
+      <button class="top-tab active" onclick="goPanel('overview',this)">Overview</button>
+      <button class="top-tab" onclick="goPanel('tasks',this)">Tasks</button>
+      <button class="top-tab" onclick="goPanel('performance',this)">Performance</button>
+      <button class="top-tab" onclick="goPanel('ai',this)">AI Assistant</button>
+      <button class="top-tab" onclick="goPanel('meetings',this)">Meetings</button>
+    </div>
+    <div class="top-right">
+      <div class="top-lang">
+        <button class="tlang active" onclick="setLang('en',this)">EN</button>
+        <button class="tlang" onclick="setLang('es',this)">ES</button>
+        <button class="tlang" onclick="setLang('pt',this)">PT</button>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">
+        <svg id="theme-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <div class="ai-badge"><div class="ai-dot"></div><span id="ai-badge-lbl">AI online</span></div>
+      <div class="uavatar" id="top-av" onclick="goPanel('settings',null)">U</div>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="sidebar">
+      <div class="sb-sec" id="sb-ws-lbl">Workspace</div>
+      <div class="sb-item active" onclick="goPanel('overview',null);sbAct(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span id="sb-overview">Overview</span>
+      </div>
+      <div class="sb-item" onclick="goPanel('tasks',null);sbAct(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span id="sb-tasks">Tasks</span><span class="sb-badge warn" id="task-ct">0</span>
+      </div>
+      <div class="sb-item" onclick="goPanel('performance',null);sbAct(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span id="sb-perf">Performance</span>
+      </div>
+      <div class="sb-item" onclick="goPanel('ai',null);sbAct(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        <span id="sb-ai">AI Assistant</span>
+      </div>
+      <div class="sb-item" onclick="goPanel('meetings',null);sbAct(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        <span id="sb-meet">Meetings</span>
+      </div>
+      <div class="sb-sec" id="sb-mg-lbl">Manage</div>
+      <div class="sb-item" onclick="goPanel('settings',null);sbAct(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span id="sb-set">Settings</span>
+      </div>
+      <div class="sb-footer">
+        <div class="sb-user" onclick="goPanel('settings',null)">
+          <div class="sb-av" id="sb-av">U</div>
+          <div><div class="sb-uname" id="sb-name">User</div><div class="sb-urole" id="sb-role">Operations Manager</div></div>
+        </div>
+        <div class="sb-logout" onclick="doLogout()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span id="sb-logout-lbl">Sign out</span>
+        </div>
+      </div>
+    </div>
+    <div class="main" id="main"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const ADMIN='deborahcardoso307@gmail.com';
+const CFG_KEY='opsai:sb';
+let sb=null,CU=null,CP={},lang='en',theme='light',panel='overview',aiTab=0,charts={};
+
+function getCfg(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'null')}catch{return null}}
+function copySql(){navigator.clipboard.writeText(document.getElementById('sql-block').textContent).then(()=>toast('SQL copied!'))}
+
+async function doSetup(){
+  const url=document.getElementById('setup-url').value.trim();
+  const key=document.getElementById('setup-key').value.trim();
+  const btn=document.getElementById('btn-setup');
+  const err=document.getElementById('setup-err');
+  err.style.display='none';
+  if(!url||!key){err.textContent='Please fill both fields.';err.style.display='block';return}
+  if(!url.includes('supabase.co')){err.textContent='URL should be like https://xxxx.supabase.co';err.style.display='block';return}
+  btn.textContent='Connecting...';btn.disabled=true;
+  try{
+    const c=supabase.createClient(url,key);
+    const{error}=await c.from('profiles').select('id').limit(1);
+    if(error&&!error.message.includes('no rows')&&error.code!=='PGRST116')throw new Error(error.message);
+    localStorage.setItem(CFG_KEY,JSON.stringify({url,key}));
+    sb=c;showScreen('auth');applyAuthI18n();
+  }catch(e){err.textContent='Failed: '+e.message;err.style.display='block';}
+  btn.textContent='Connect & continue';btn.disabled=false;
+}
+
+const I18N={
+en:{
+  'hero-h':'Operations,<br/>driven by <em>intelligence.</em>',
+  'hero-p':'A unified platform for modern teams — task management, performance analysis and AI-powered decisions.',
+  'af1':'AI task prioritization & smart scheduling','af2':'Meeting intelligence & automatic summaries',
+  'af3':'Performance analytics with actionable insights','af4':'Available in English, Spanish & Portuguese',
+  'auth-title':'Welcome back','auth-sub':'Sign in to your workspace',
+  'lbl-email':'Email','lbl-pass':'Password','btn-login':'Sign in',
+  'reg-title':'Create your account','reg-sub':'Start your free workspace',
+  'lbl-name':'Full name','lbl-remail':'Email','lbl-rpass':'Password','btn-reg':'Create account',
+  'ai-badge':'AI online','sb-ws-lbl':'Workspace','sb-mg-lbl':'Manage',
+  'sb-overview':'Overview','sb-tasks':'Tasks','sb-perf':'Performance',
+  'sb-ai':'AI Assistant','sb-meet':'Meetings','sb-set':'Settings',
+  'sb-role':'Operations Manager','sb-logout-lbl':'Sign out',
+  'ov-h':'Workspace overview','ov-s':'Your operations at a glance',
+  'tk-h':'Task manager','tk-s':'AI-powered prioritization',
+  'pf-h':'Performance analytics','pf-s':'Automated weekly analysis',
+  'ai-h':'AI Assistant','ai-s':'Groq-powered operations intelligence',
+  'mt-h':'Meeting intelligence','mt-s':'Transcript to insights in seconds',
+  'st-h':'Settings','st-s':'Workspace preferences',
+  'm-tasks':'Active tasks','m-done':'Completed','m-sess':'Focus sessions','m-score':'AI score',
+  'm-td':'this week','m-rate':'completion rate','m-sd':'avg 42 min','m-scd':'productivity index',
+  'cw-t':'Weekly output','cw-s':'Tasks completed per day',
+  'cd-t':'Task distribution','cd-s':'By priority',
+  'cf-t':'Focus time','cf-s':'Daily hours in deep work',
+  'btn-aip':'AI prioritize','btn-add':'Add task','tk-ph':'New task description...',
+  'ph':'High','pm':'Medium','pl':'Low',
+  'td':'Today','tm':'Tomorrow','tw':'This week','nw':'Next week',
+  'ai-modes':['General','Prioritize tasks','Generate insights','Summarize meeting','Draft email'],
+  'ai-hints':['Ask anything about productivity, operations or your business.','List tasks and hours — AI will suggest the ideal order.','Describe your week and receive pattern analysis.','Paste meeting transcript to extract decisions and actions.','Describe context and AI will draft a professional email.'],
+  'ai-phs':['E.g. What should I focus on to improve team output?','List your tasks and available hours...','Describe what happened in your work week...','Paste meeting transcript or notes here...','Describe the email: recipient, topic, tone...'],
+  'btn-send':'Send to AI','ai-rl':'AI response','ai-ph':'The response will appear here...',
+  'mt-hint':'Paste transcript or meeting notes:',
+  'mt-ph':'E.g. Meeting with client XYZ, May 27. Discussed Q3 roadmap, identified 3 key risks...',
+  'btn-sum':'Summarize with AI','mt-ol':'Generated summary','mt-oph':'Summary will appear here...','new-mt':'Log new meeting',
+  'st-prof':'Profile','st-ws':'Workspace','st-app':'Appearance',
+  'dark-lbl':'Dark mode','dark-d':'Use the exclusive dark theme',
+  'st-name':'Display name','st-co':'Company','btn-save':'Save settings',
+  'ins-pt':'Peak productivity window','ins-pd':'Best output in morning block. Schedule high-priority tasks between 9-11 AM.',
+  'ins-ft':'Friday drop pattern','ins-fd':'Completion rate drops ~40% on Fridays. Consider reserving them for planning.',
+  'ins-lt':'Focus time below target','ins-ld':'Average daily focus time is below the recommended 3h. Try time-blocking.',
+  'ins-ai':'Click Refresh insights to generate a personalized AI analysis of your week.',
+  'btn-ref':'Refresh insights',
+  'feat-tasks-t':'Smart task management','feat-tasks-d':'AI auto-prioritizes based on urgency, deadlines and workload.',
+  'feat-meet-t':'Meeting intelligence','feat-meet-d':'Paste any transcript and get summary, actions and risks instantly.',
+  'feat-perf-t':'Performance analytics','feat-perf-d':'Automatic pattern detection across your weekly activity.',
+  'feat-ai-t':'AI operations assistant','feat-ai-d':'Ask anything - prioritize, plan, draft, analyze.',
+  'feat-global-t':'Global-ready','feat-global-d':'Full support for English, Spanish and Portuguese.',
+  'feat-priv-t':'Private & isolated','feat-priv-d':'All data stored securely in the cloud, fully isolated per account.',
+  'ob-r':'What best describes your role?','ob-rs':"We'll tailor your experience.",
+  'ob-g':'What are your main goals?','ob-gs':'Select all that apply.',
+  'ob-s':'One last step','ob-ss':'Name your workspace to get started.',
+  'ob-wp':'e.g. Acme Corp Operations','ob-next':'Continue','ob-fin':'Get started',
+  'ob-r1':'Operations Manager','ob-r2':'Product Manager','ob-r3':'Team Lead','ob-r4':'Executive',
+  'ob-g1':'Manage tasks efficiently','ob-g2':'Reduce meeting overhead','ob-g3':'Improve team performance','ob-g4':'Automate workflows',
+  'sys':`You are an expert in operations, productivity, project management, process automation and performance analysis. Your role is to help the user track projects, identify bottlenecks, monitor tasks, analyze metrics and suggest actions to increase operational efficiency.
+
+BEHAVIOR RULES:
+1. Always consider the full context provided before responding.
+2. Never suggest tasks that are already completed.
+3. Identify risks, delays and bottlenecks proactively.
+4. Prioritize critical activities.
+5. Consider dependencies between tasks.
+6. When there are overdue or high-priority tasks, highlight them first.
+7. When answering productivity questions, use the real data provided.
+8. When creating action plans, use only existing tasks and projects.
+9. Always look for process improvement opportunities.
+10. Use performance metrics to justify recommendations.
+11. For "What is delayed?", "What is a priority?", "How to improve?", "Where are the bottlenecks?" answer using exclusively the data provided.
+
+RESPONSE STYLE:
+📊 Executive Summary
+⚠️ Identified Risks
+📌 Priorities
+🚀 Recommended Actions
+💡 Suggested Next Steps
+
+Never invent data. Be concise and executive. Respond in English.`
+},
+es:{
+  'hero-h':'Operaciones,<br/>impulsadas por <em>inteligencia.</em>',
+  'hero-p':'Una plataforma unificada para equipos modernos — gestión de tareas, análisis y decisiones con IA.',
+  'af1':'Priorización de tareas con IA','af2':'Inteligencia de reuniones y resúmenes automáticos',
+  'af3':'Análisis de rendimiento con insights accionables','af4':'Disponible en inglés, español y portugués',
+  'auth-title':'Bienvenido de nuevo','auth-sub':'Inicia sesión en tu workspace',
+  'lbl-email':'Correo','lbl-pass':'Contraseña','btn-login':'Iniciar sesión',
+  'reg-title':'Crea tu cuenta','reg-sub':'Comienza tu workspace gratuito',
+  'lbl-name':'Nombre completo','lbl-remail':'Correo','lbl-rpass':'Contraseña','btn-reg':'Crear cuenta',
+  'ai-badge':'IA en línea','sb-ws-lbl':'Espacio de trabajo','sb-mg-lbl':'Gestión',
+  'sb-overview':'Resumen','sb-tasks':'Tareas','sb-perf':'Rendimiento',
+  'sb-ai':'Asistente IA','sb-meet':'Reuniones','sb-set':'Configuración',
+  'sb-role':'Gerente de Operaciones','sb-logout-lbl':'Cerrar sesión',
+  'ov-h':'Resumen del workspace','ov-s':'Tus operaciones de un vistazo',
+  'tk-h':'Gestión de tareas','tk-s':'Priorización automática con IA',
+  'pf-h':'Análisis de rendimiento','pf-s':'Análisis semanal automatizado',
+  'ai-h':'Asistente IA','ai-s':'Inteligencia operacional con Groq',
+  'mt-h':'Inteligencia de reuniones','mt-s':'Transcripción a insights en segundos',
+  'st-h':'Configuración','st-s':'Preferencias del workspace',
+  'm-tasks':'Tareas activas','m-done':'Completadas','m-sess':'Sesiones de foco','m-score':'Score IA',
+  'm-td':'esta semana','m-rate':'tasa de completado','m-sd':'prom. 42 min','m-scd':'índice de productividad',
+  'cw-t':'Producción semanal','cw-s':'Tareas completadas por día',
+  'cd-t':'Distribución de tareas','cd-s':'Por prioridad',
+  'cf-t':'Tiempo de enfoque','cf-s':'Horas diarias en trabajo profundo',
+  'btn-aip':'Priorizar con IA','btn-add':'Agregar tarea','tk-ph':'Descripción de nueva tarea...',
+  'ph':'Alta','pm':'Media','pl':'Baja',
+  'td':'Hoy','tm':'Mañana','tw':'Esta semana','nw':'Próxima semana',
+  'ai-modes':['General','Priorizar tareas','Generar insights','Resumir reunión','Redactar email'],
+  'ai-hints':['Pregunta cualquier cosa sobre productividad u operaciones.','Lista tareas y horas — la IA sugerirá el orden ideal.','Describe tu semana y obtén análisis de patrones.','Pega transcripción de reunión para extraer decisiones y acciones.','Describe el contexto y la IA redactará un email profesional.'],
+  'ai-phs':['Ej. ¿En qué debo enfocarme para mejorar el rendimiento del equipo?','Lista tus tareas y horas disponibles...','Describe lo que ocurrió en tu semana laboral...','Pega la transcripción aquí...','Describe el email: destinatario, tema, tono...'],
+  'btn-send':'Enviar a la IA','ai-rl':'Respuesta de la IA','ai-ph':'La respuesta aparecerá aquí...',
+  'mt-hint':'Pega la transcripción o notas:',
+  'mt-ph':'Ej. Reunión con cliente XYZ, 27 de mayo. Se discutió el roadmap Q3...',
+  'btn-sum':'Resumir con IA','mt-ol':'Resumen generado','mt-oph':'El resumen aparecerá aquí...','new-mt':'Registrar reunión',
+  'st-prof':'Perfil','st-ws':'Workspace','st-app':'Apariencia',
+  'dark-lbl':'Modo oscuro','dark-d':'Usar el tema oscuro exclusivo',
+  'st-name':'Nombre','st-co':'Empresa','btn-save':'Guardar configuración',
+  'ins-pt':'Ventana de máxima productividad','ins-pd':'Mejor rendimiento entre 9-11h. Programa tareas de alta prioridad en ese bloque.',
+  'ins-ft':'Patrón de caída los viernes','ins-fd':'La tasa de completado cae ~40% los viernes. Reservarlos para planificación.',
+  'ins-lt':'Tiempo de enfoque bajo objetivo','ins-ld':'El tiempo de enfoque está por debajo de las 3h recomendadas.',
+  'ins-ai':'Haz clic en Actualizar insights para generar un análisis personalizado.',
+  'btn-ref':'Actualizar insights',
+  'feat-tasks-t':'Gestión inteligente','feat-tasks-d':'La IA prioriza por urgencia, plazos y carga de trabajo.',
+  'feat-meet-t':'Inteligencia de reuniones','feat-meet-d':'Transcripción a resumen, acciones y riesgos al instante.',
+  'feat-perf-t':'Análisis de rendimiento','feat-perf-d':'Detección automática de patrones en tu actividad semanal.',
+  'feat-ai-t':'Asistente IA de operaciones','feat-ai-d':'Pregunta cualquier cosa - prioriza, planifica, redacta, analiza.',
+  'feat-global-t':'Listo para el mundo','feat-global-d':'Soporte completo para inglés, español y portugués.',
+  'feat-priv-t':'Privado y aislado','feat-priv-d':'Datos almacenados de forma segura en la nube, aislados por cuenta.',
+  'ob-r':'¿Qué describe mejor tu rol?','ob-rs':'Personalizaremos tu experiencia.',
+  'ob-g':'¿Cuáles son tus objetivos?','ob-gs':'Selecciona todos los que apliquen.',
+  'ob-s':'Un último paso','ob-ss':'Nombra tu workspace para comenzar.',
+  'ob-wp':'ej. Operaciones Acme Corp','ob-next':'Continuar','ob-fin':'Comenzar',
+  'ob-r1':'Gerente de Operaciones','ob-r2':'Product Manager','ob-r3':'Líder de Equipo','ob-r4':'Ejecutivo',
+  'ob-g1':'Gestionar tareas eficientemente','ob-g2':'Reducir carga de reuniones','ob-g3':'Mejorar rendimiento del equipo','ob-g4':'Automatizar flujos de trabajo',
+  'sys':`Eres un experto en operaciones, productividad, gestión de proyectos, automatización y análisis de desempeño. Tu función es ayudar al usuario a hacer seguimiento de proyectos, identificar cuellos de botella, monitorear tareas, analizar métricas y sugerir acciones para aumentar la eficiencia operacional.
+
+REGLAS:
+1. Considera siempre el contexto completo antes de responder.
+2. Nunca sugieras tareas ya completadas.
+3. Identifica riesgos, retrasos y cuellos de botella.
+4. Prioriza actividades críticas.
+5. Considera dependencias entre tareas.
+6. Destaca tareas atrasadas o de alta prioridad primero.
+7. Usa los datos reales para responder sobre productividad.
+8. Solo usa tareas/proyectos existentes al crear planes.
+9. Busca oportunidades de mejora de procesos.
+10. Usa métricas disponibles para justificar recomendaciones.
+
+ESTILO DE RESPUESTA:
+📊 Resumen Ejecutivo
+⚠️ Riesgos Identificados
+📌 Prioridades
+🚀 Acciones Recomendadas
+💡 Próximos Pasos Sugeridos
+
+Nunca inventes datos. Sé conciso y ejecutivo. Responde en español.`
+},
+pt:{
+  'hero-h':'Operações,<br/>impulsionadas por <em>inteligência.</em>',
+  'hero-p':'Uma plataforma unificada para equipes modernas — gestão de tarefas, análise de performance e decisões com IA.',
+  'af1':'Priorização de tarefas com IA','af2':'Inteligência de reuniões e resumos automáticos',
+  'af3':'Análise de performance com insights acionáveis','af4':'Disponível em inglês, espanhol e português',
+  'auth-title':'Bem-vindo de volta','auth-sub':'Entre no seu workspace',
+  'lbl-email':'E-mail','lbl-pass':'Senha','btn-login':'Entrar',
+  'reg-title':'Crie sua conta','reg-sub':'Comece seu workspace gratuito',
+  'lbl-name':'Nome completo','lbl-remail':'E-mail','lbl-rpass':'Senha','btn-reg':'Criar conta',
+  'ai-badge':'IA online','sb-ws-lbl':'Espaço de trabalho','sb-mg-lbl':'Gestão',
+  'sb-overview':'Visão geral','sb-tasks':'Tarefas','sb-perf':'Performance',
+  'sb-ai':'Assistente IA','sb-meet':'Reuniões','sb-set':'Configurações',
+  'sb-role':'Gerente de Operações','sb-logout-lbl':'Sair',
+  'ov-h':'Visão geral do workspace','ov-s':'Suas operações em uma visão',
+  'tk-h':'Gerenciador de tarefas','tk-s':'Priorização automática com IA',
+  'pf-h':'Análise de performance','pf-s':'Análise semanal automatizada',
+  'ai-h':'Assistente IA','ai-s':'Inteligência operacional com Groq',
+  'mt-h':'Inteligência de reuniões','mt-s':'Transcrição para insights em segundos',
+  'st-h':'Configurações','st-s':'Preferências do workspace',
+  'm-tasks':'Tarefas ativas','m-done':'Concluídas','m-sess':'Sessões de foco','m-score':'Score IA',
+  'm-td':'esta semana','m-rate':'taxa de conclusão','m-sd':'média 42 min','m-scd':'índice de produtividade',
+  'cw-t':'Produção semanal','cw-s':'Tarefas concluídas por dia',
+  'cd-t':'Distribuição de tarefas','cd-s':'Por prioridade',
+  'cf-t':'Tempo de foco','cf-s':'Horas diárias em trabalho profundo',
+  'btn-aip':'Priorizar com IA','btn-add':'Adicionar tarefa','tk-ph':'Descrição da nova tarefa...',
+  'ph':'Alta','pm':'Média','pl':'Baixa',
+  'td':'Hoje','tm':'Amanhã','tw':'Esta semana','nw':'Próxima semana',
+  'ai-modes':['Geral','Priorizar tarefas','Gerar insights','Resumir reunião','Rascunhar e-mail'],
+  'ai-hints':['Pergunte qualquer coisa sobre produtividade ou operações.','Liste tarefas e horas — a IA sugerirá a ordem ideal.','Descreva sua semana e receba análise de padrões.','Cole transcrição de reunião para extrair decisões e ações.','Descreva o contexto e a IA redigirá um e-mail profissional.'],
+  'ai-phs':['Ex: Em que devo focar para melhorar o desempenho da equipe?','Liste suas tarefas e horas disponíveis...','Descreva o que aconteceu na sua semana de trabalho...','Cole a transcrição aqui...','Descreva o e-mail: destinatário, assunto, tom...'],
+  'btn-send':'Enviar para IA','ai-rl':'Resposta da IA','ai-ph':'A resposta aparecerá aqui...',
+  'mt-hint':'Cole a transcrição ou anotações:',
+  'mt-ph':'Ex: Reunião com cliente XYZ, 27/05. Discutimos o roadmap Q3, identificamos 3 riscos...',
+  'btn-sum':'Resumir com IA','mt-ol':'Resumo gerado','mt-oph':'O resumo aparecerá aqui...','new-mt':'Registrar reunião',
+  'st-prof':'Perfil','st-ws':'Workspace','st-app':'Aparência',
+  'dark-lbl':'Modo escuro','dark-d':'Usar o tema escuro exclusivo',
+  'st-name':'Nome','st-co':'Empresa','btn-save':'Salvar configurações',
+  'ins-pt':'Janela de pico de produtividade','ins-pd':'Melhor desempenho entre 9-11h. Agende tarefas de alta prioridade nesse bloco.',
+  'ins-ft':'Padrão de queda nas sextas','ins-fd':'Taxa de conclusão cai ~40% às sextas. Considere reservá-las para planejamento.',
+  'ins-lt':'Tempo de foco abaixo do objetivo','ins-ld':'Tempo de foco abaixo das 3h recomendadas. Tente bloquear tempo no calendário.',
+  'ins-ai':'Clique em Atualizar insights para gerar uma análise personalizada da sua semana.',
+  'btn-ref':'Atualizar insights',
+  'feat-tasks-t':'Gestão inteligente de tarefas','feat-tasks-d':'IA prioriza por urgência, prazos e carga de trabalho.',
+  'feat-meet-t':'Inteligência de reuniões','feat-meet-d':'Transcrição para resumo, ações e riscos em segundos.',
+  'feat-perf-t':'Análise de performance','feat-perf-d':'Detecção automática de padrões na sua atividade semanal.',
+  'feat-ai-t':'Assistente IA de operações','feat-ai-d':'Pergunte qualquer coisa - priorize, planeje, rascunhe, analise.',
+  'feat-global-t':'Pronto para o mundo','feat-global-d':'Suporte completo para inglês, espanhol e português.',
+  'feat-priv-t':'Privado e isolado','feat-priv-d':'Dados armazenados com segurança na nuvem, isolados por conta.',
+  'ob-r':'O que melhor descreve seu papel?','ob-rs':'Personalizaremos sua experiência.',
+  'ob-g':'Quais são seus principais objetivos?','ob-gs':'Selecione todos que se aplicam.',
+  'ob-s':'Último passo','ob-ss':'Nomeie seu workspace para começar.',
+  'ob-wp':'ex: Operações Acme Corp','ob-next':'Continuar','ob-fin':'Começar',
+  'ob-r1':'Gerente de Operações','ob-r2':'Product Manager','ob-r3':'Líder de Equipe','ob-r4':'Executivo',
+  'ob-g1':'Gerenciar tarefas com eficiência','ob-g2':'Reduzir carga de reuniões','ob-g3':'Melhorar performance da equipe','ob-g4':'Automatizar fluxos de trabalho',
+  'sys':`Você é um especialista em operações, produtividade, gestão de projetos, automação de processos e análise de desempenho. Sua função é ajudar o usuário a acompanhar projetos, identificar gargalos, monitorar tarefas, analisar métricas e sugerir ações para aumentar a eficiência operacional.
+
+REGRAS DE COMPORTAMENTO:
+1. Considere sempre o histórico completo antes de responder.
+2. Nunca sugira tarefas já concluídas.
+3. Identifique riscos, atrasos e gargalos.
+4. Priorize atividades críticas.
+5. Considere dependências entre tarefas.
+6. Quando houver tarefas atrasadas ou de alta prioridade, destaque-as primeiro.
+7. Ao responder sobre produtividade, utilize os dados reais fornecidos.
+8. Ao criar planos de ação, utilize apenas projetos e tarefas existentes.
+9. Sempre procure oportunidades de melhoria de processos.
+10. Se houver métricas disponíveis, utilize-as para justificar recomendações.
+11. Para perguntas como "O que está atrasado?", "O que é prioridade?", "Como melhorar a operação?", "Onde estão os gargalos?" responda usando exclusivamente os dados fornecidos.
+
+ESTILO DE RESPOSTA:
+📊 Resumo Executivo
+⚠️ Riscos Identificados
+📌 Prioridades
+🚀 Ações Recomendadas
+💡 Próximos Passos Sugeridos
+
+Nunca invente dados. Seja conciso e executivo. Responda em português.`
+}};
+
+function t(k){return(I18N[lang]&&I18N[lang][k])||I18N.en[k]||k}
+
+function applyTheme(th){
+  theme=th;document.documentElement.setAttribute('data-theme',th);
+  const ic=document.getElementById('theme-ic');
+  if(ic)ic.innerHTML=th==='dark'?'<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>':'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  Object.values(charts).forEach(c=>{if(c)rchart(c)});
+  if(CU&&sb)sb.from('profiles').update({theme:th}).eq('id',CU.id).then(()=>{});
+}
+function toggleTheme(){applyTheme(theme==='dark'?'light':'dark')}
+function rchart(c){
+  const g=getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  const tc=getComputedStyle(document.documentElement).getPropertyValue('--text3').trim();
+  if(c.options.scales)Object.values(c.options.scales).forEach(ax=>{if(ax.grid)ax.grid.color=g;if(ax.ticks)ax.ticks.color=tc});
+  c.update('none');
+}
+
+function setLang(l,el){
+  lang=l;
+  document.querySelectorAll('.tlang').forEach(b=>b.classList.toggle('active',b.textContent===l.toUpperCase()));
+  if(CU&&sb)sb.from('profiles').update({lang:l}).eq('id',CU.id).then(()=>{});
+  applyI18n();goPanel(panel,null);
+}
+function authLang(l,el){
+  lang=l;
+  document.querySelectorAll('.lang-pill').forEach(b=>b.classList.remove('active'));el.classList.add('active');
+  applyAuthI18n();
+}
+function applyAuthI18n(){
+  ['hero-h','hero-p','af1','af2','af3','af4'].forEach(id=>{const el=document.getElementById(id);if(!el)return;if(id==='hero-h')el.innerHTML=t(id);else el.textContent=t(id)});
+  ['auth-title','auth-sub','lbl-email','lbl-pass','btn-login','reg-title','reg-sub','lbl-name','lbl-remail','lbl-rpass','btn-reg'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id)});
+  const sw=document.getElementById('auth-sw');
+  if(sw)sw.innerHTML=t('auth-sw-text')||`${lang==='pt'?"Não tem uma conta?":lang==='es'?"¿No tienes cuenta?":"Don't have an account?"} <a onclick="showReg()">${lang==='pt'?"Crie uma":lang==='es'?"Créala aquí":"Create one"}</a>`;
+}
+function applyI18n(){
+  ['ai-badge-lbl','sb-ws-lbl','sb-mg-lbl','sb-overview','sb-tasks','sb-perf','sb-ai','sb-meet','sb-set','sb-role','sb-logout-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id)});
+}
+
+function showScreen(n){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen-'+n))}
+function hideLoad(){document.getElementById('global-loading').style.display='none'}
+
+function showLogin(){document.getElementById('form-login').style.display='';document.getElementById('form-reg').style.display='none';clearErr()}
+function showReg(){document.getElementById('form-login').style.display='none';document.getElementById('form-reg').style.display='';clearErr()}
+function showErr(m){const e=document.getElementById('auth-err');e.textContent=m;e.style.display='block'}
+function clearErr(){document.getElementById('auth-err').style.display='none'}
+function setBtns(on){['btn-login','btn-reg'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=on})}
+
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  if(!email||!pass){showErr('Please fill all fields.');return}
+  setBtns(true);clearErr();
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  setBtns(false);
+  if(error){showErr(error.message);return}
+  await afterLogin(data.user);
+}
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  if(!name||!email||!pass){showErr('Please fill all fields.');return}
+  if(pass.length<6){showErr('Password must be at least 6 characters.');return}
+  setBtns(true);clearErr();
+  const{data,error}=await sb.auth.signUp({email,password:pass});
+  setBtns(false);
+  if(error){showErr(error.message);return}
+  await sb.from('profiles').upsert({id:data.user.id,email,name,lang,theme:'light',onboarding_done:false});
+  await afterLogin(data.user,true);
+}
+async function afterLogin(user,isNew=false){
+  CU=user;
+  const{data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  CP=p||{};
+  lang=CP.lang||lang;
+  applyTheme(CP.theme||'light');
+  document.querySelectorAll('.tlang').forEach(b=>b.classList.toggle('active',b.textContent===lang.toUpperCase()));
+  const ini=(CP.name||user.email).split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  ['top-av','sb-av'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini});
+  const sn=document.getElementById('sb-name');if(sn)sn.textContent=CP.name||user.email;
+  if(isNew||!CP.onboarding_done){showScreen('onboarding');startOb();return}
+  showScreen('dashboard');applyI18n();goPanel('overview',null);updateBadge();
+}
+async function doLogout(){
+  await sb.auth.signOut();CU=null;CP={};
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch{}});charts={};
+  showScreen('auth');showLogin();
+}
+
+let obStep=0,obRole='',obGoals=[];
+function startOb(){obStep=0;obRole='';obGoals=[];renderOb()}
+function renderOb(){
+  const dots=document.getElementById('ob-dots');
+  dots.innerHTML=[0,1,2].map(i=>`<div class="ob-dot" style="width:${i===obStep?32:20}px;background:${i<obStep?'var(--gold)':i===obStep?'var(--accent)':'var(--border2)'}"></div>`).join('');
+  const c=document.getElementById('ob-content');
+  if(obStep===0){
+    c.innerHTML=`<h2>${t('ob-r')}</h2><p class="sub">${t('ob-rs')}</p><div class="ob-grid">${['ob-r1','ob-r2','ob-r3','ob-r4'].map((k,i)=>`<div class="ob-choice ${obRole===k?'sel':''}" onclick="obRole='${k}';document.querySelectorAll('.ob-choice').forEach(x=>x.classList.remove('sel'));this.classList.add('sel')"><span class="oc-icon">${['⚙️','🎯','👥','🏢'][i]}</span><div class="oc-title">${t(k)}</div></div>`).join('')}</div><div class="ob-nav"><div></div><button class="btn-accent" onclick="obStep=1;renderOb()">${t('ob-next')} →</button></div>`;
+  }else if(obStep===1){
+    c.innerHTML=`<h2>${t('ob-g')}</h2><p class="sub">${t('ob-gs')}</p><div class="ob-grid">${['ob-g1','ob-g2','ob-g3','ob-g4'].map(k=>`<div class="ob-choice ${obGoals.includes(k)?'sel':''}" onclick="var i=obGoals.indexOf('${k}');if(i>-1)obGoals.splice(i,1);else obGoals.push('${k}');this.classList.toggle('sel',obGoals.includes('${k}'))"><div class="oc-title" style="margin-top:4px">${t(k)}</div></div>`).join('')}</div><div class="ob-nav"><button class="btn-ghost" onclick="obStep=0;renderOb()">←</button><button class="btn-accent" onclick="obStep=2;renderOb()">${t('ob-next')} →</button></div>`;
+  }else{
+    c.innerHTML=`<h2>${t('ob-s')}</h2><p class="sub">${t('ob-ss')}</p><input class="ob-input" id="ob-ws" placeholder="${t('ob-wp')}" value="${(CP.name||'')} Workspace"/><div class="ob-nav" style="margin-top:16px"><button class="btn-ghost" onclick="obStep=1;renderOb()">←</button><button class="btn-accent" id="ob-fin-btn" onclick="obFinish()">${t('ob-fin')}</button></div>`;
+  }
+}
+async function obFinish(){
+  const btn=document.getElementById('ob-fin-btn');btn.disabled=true;btn.textContent='...';
+  const ws=document.getElementById('ob-ws')?.value||'';
+  await sb.from('profiles').update({onboarding_done:true,workspace:ws}).eq('id',CU.id);
+  CP.onboarding_done=true;CP.workspace=ws;
+  showScreen('dashboard');applyI18n();goPanel('overview',null);updateBadge();toast('Workspace ready!');
+}
+
+function goPanel(name,tabEl){
+  panel=name;
+  if(tabEl){document.querySelectorAll('.top-tab').forEach(tb=>tb.classList.remove('active'));tabEl.classList.add('active')}
+  const main=document.getElementById('main');
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch{}});charts={};
+  const map={overview:rOverview,tasks:rTasks,performance:rPerf,ai:rAI,meetings:rMeetings,settings:rSettings};
+  main.innerHTML='';if(map[name])map[name](main);applyI18n();
+}
+function sbAct(el){document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('active'));if(el)el.classList.add('active')}
+
+async function updateBadge(){
+  if(!CU||!sb)return;
+  const{count}=await sb.from('tasks').select('*',{count:'exact',head:true}).eq('user_id',CU.id).eq('done',false);
+  const el=document.getElementById('task-ct');if(el)el.textContent=count||0;
+}
+
+function cDefs(){
+  const g=getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'rgba(0,0,0,0.07)';
+  const tc=getComputedStyle(document.documentElement).getPropertyValue('--text3').trim()||'#9a9890';
+  return{g,tc,font:{family:'DM Sans',size:11}};
+}
+function bScales(){const{g,tc,font}=cDefs();return{x:{grid:{color:g,drawBorder:false},ticks:{color:tc,font}},y:{grid:{color:g,drawBorder:false},ticks:{color:tc,font}}}}
+
+async function rOverview(el){
+  el.innerHTML=`<div class="panel-row fade-in"><div><div class="panel-h">${t('ov-h')}</div><div class="panel-sub">${t('ov-s')}</div></div></div><div id="ovm" class="metrics fade-in">${[0,1,2,3].map(()=>'<div class="mc"><div class="mc-lbl">...</div><div class="mc-val">—</div></div>').join('')}</div><div class="charts-grid fade-in"><div class="chart-card"><div class="chart-h"><div><div class="chart-title">${t('cw-t')}</div><div class="chart-sub">${t('cw-s')}</div></div></div><div class="chart-wrap"><canvas id="cv-ow"></canvas></div></div><div class="chart-card"><div class="chart-h"><div><div class="chart-title">${t('cd-t')}</div><div class="chart-sub">${t('cd-s')}</div></div></div><div class="chart-wrap"><canvas id="cv-od"></canvas></div></div></div><div class="card fade-in"><div class="card-head"><div class="card-title">✦ Platform capabilities</div></div><div class="card-body"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">${[['feat-tasks','⚙️'],['feat-meet','🎙️'],['feat-perf','📊'],['feat-ai','✦'],['feat-global','🌐'],['feat-priv','🔒']].map(([k,ic])=>`<div style="padding:16px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border)"><div style="font-size:18px;margin-bottom:8px">${ic}</div><div style="font-size:12px;font-weight:500;margin-bottom:4px">${t(k+'-t')}</div><div style="font-size:12px;color:var(--text2)">${t(k+'-d')}</div></div>`).join('')}</div></div></div>`;
+  const[{data:tasks},{data:stats}]=await Promise.all([sb.from('tasks').select('*').eq('user_id',CU.id),sb.from('weekly_stats').select('*').eq('user_id',CU.id)]);
+  const all=tasks||[];const done=all.filter(x=>x.done).length;const active=all.filter(x=>!x.done).length;
+  const rate=all.length?Math.round(done/all.length*100):0;const score=rate>=70?'A':rate>=50?'B+':'C';
+  document.getElementById('ovm').innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div><div class="mc-d neu">${t('m-td')}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}% ${t('m-rate')}</div></div><div class="mc"><div class="mc-lbl">${t('m-sess')}</div><div class="mc-val">${CP.sessions||7}</div><div class="mc-d neu">${t('m-sd')}</div></div><div class="mc"><div class="mc-lbl">${t('m-score')}</div><div class="mc-val">${score}</div><div class="mc-d pos">${t('m-scd')}</div></div>`;
+  const wData=[0,1,2,3,4,5].map(i=>{const s=(stats||[]).find(s=>s.day_index===i);return s?s.count:0});
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat'];
+  setTimeout(()=>{
+    const cw=document.getElementById('cv-ow');if(cw)charts['ow']=new Chart(cw,{type:'bar',data:{labels:days,datasets:[{label:t('m-done'),data:wData,backgroundColor:'var(--gold)',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:bScales()}});
+    const h=all.filter(x=>x.prio==='h').length,m=all.filter(x=>x.prio==='m').length,l=all.filter(x=>x.prio==='l').length;
+    const cd=document.getElementById('cv-od');if(cd){const{tc}=cDefs();charts['od']=new Chart(cd,{type:'doughnut',data:{labels:[t('ph'),t('pm'),t('pl')],datasets:[{data:[h||1,m||1,l||1],backgroundColor:['var(--red)','var(--amber)','var(--green)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:tc,padding:12,font:{size:11}}}}}})}
+  },50);
+}
+
+async function rTasks(el){
+  el.innerHTML=`<div class="panel-row fade-in"><div><div class="panel-h">${t('tk-h')}</div><div class="panel-sub">${t('tk-s')}</div></div><button class="btn-sm gold" onclick="aiPrio()">✦ ${t('btn-aip')}</button></div><div id="tm" class="metrics fade-in"></div><div class="card fade-in"><div class="card-head"><div class="card-title">📋 ${t('sb-tasks')}</div></div><div class="card-body"><div id="tl"><div class="empty">Loading...</div></div><div class="add-row"><input id="ni" placeholder="${t('tk-ph')}" onkeydown="if(event.key==='Enter')addTask()"/><select id="np"><option value="h">${t('ph')}</option><option value="m" selected>${t('pm')}</option><option value="l">${t('pl')}</option></select><select id="nd"><option value="today">${t('td')}</option><option value="tomorrow" selected>${t('tm')}</option><option value="this-week">${t('tw')}</option><option value="next-week">${t('nw')}</option></select><button class="btn-sm gold" onclick="addTask()">${t('btn-add')}</button></div></div></div><div id="apr" style="display:none" class="card fade-in"><div class="card-head"><div class="card-title">✦ AI Recommendation</div></div><div class="card-body"><div class="ai-resp" id="apt">${t('ai-ph')}</div></div></div>`;
+  await loadTasks();
+}
+async function loadTasks(){
+  const{data:tasks}=await sb.from('tasks').select('*').eq('user_id',CU.id).order('created_at');
+  const all=tasks||[];const done=all.filter(x=>x.done).length;const active=all.filter(x=>!x.done).length;
+  const high=all.filter(x=>x.prio==='h'&&!x.done).length;const rate=all.length?Math.round(done/all.length*100):0;
+  const tm=document.getElementById('tm');
+  if(tm)tm.innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}%</div></div><div class="mc"><div class="mc-lbl">High priority</div><div class="mc-val">${high}</div><div class="mc-d ${high>0?'neg':'pos'}">${high>0?'⚠':'✓'}</div></div><div class="mc"><div class="mc-lbl">AI prioritized</div><div class="mc-val">${CP.ai_prio_ct||0}</div></div>`;
+  const tl=document.getElementById('tl');if(!tl)return;
+  if(!all.length){tl.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Add your first task below</div>';return}
+  tl.innerHTML=all.map(tk=>`<div class="task-item"><div class="t-check ${tk.done?'done':''}" onclick="toggleTask('${tk.id}',${tk.done})"></div><div class="t-content"><div class="t-name ${tk.done?'done':''}">${tk.name}</div><div class="t-meta"><span class="tag tag-${tk.prio}">${t('p'+tk.prio)}</span><span class="tag-date">${t(tk.date)||tk.date}</span></div></div><div class="t-actions"><button class="t-btn del" onclick="delTask('${tk.id}')">✕</button></div></div>`).join('');
+  const ct=document.getElementById('task-ct');if(ct)ct.textContent=active;
+}
+async function addTask(){
+  const inp=document.getElementById('ni');const v=inp.value.trim();if(!v)return;inp.value='';
+  await sb.from('tasks').insert({user_id:CU.id,name:v,prio:document.getElementById('np').value,date:document.getElementById('nd').value,done:false});
+  await loadTasks();toast('Task added');
+}
+async function toggleTask(id,wasDone){
+  await sb.from('tasks').update({done:!wasDone}).eq('id',id);
+  if(!wasDone){
+    const day=new Date().getDay();const idx=day===0?5:Math.min(day-1,5);
+    const{data:ex}=await sb.from('weekly_stats').select('count').eq('user_id',CU.id).eq('day_index',idx).single();
+    if(ex)await sb.from('weekly_stats').update({count:(ex.count||0)+1}).eq('user_id',CU.id).eq('day_index',idx);
+    else await sb.from('weekly_stats').insert({user_id:CU.id,day_index:idx,count:1});
+  }
+  await loadTasks();
+}
+async function delTask(id){await sb.from('tasks').delete().eq('id',id);await loadTasks()}
+async function aiPrio(){
+  const{data:tasks}=await sb.from('tasks').select('*').eq('user_id',CU.id).eq('done',false);
+  if(!(tasks||[]).length){toast('No pending tasks');return}
+  const apr=document.getElementById('apr');const apt=document.getElementById('apt');
+  if(!apr||!apt)return;apr.style.display='';apt.textContent='';apt.classList.add('loading');apt.classList.remove('filled');
+  const list=tasks.map((tk,i)=>`${i+1}. ${tk.name} [${tk.prio==='h'?'High':tk.prio==='m'?'Medium':'Low'}, due: ${tk.date}]`).join('\n');
+  const prompts={en:`My pending tasks:\n${list}\n\nSuggest the ideal execution order for today.`,es:`Mis tareas:\n${list}\n\nSugiere el orden ideal para hoy.`,pt:`Minhas tarefas:\n${list}\n\nSugira a ordem ideal para hoje.`};
+  try{const r=await callAI(prompts[lang]);apt.classList.remove('loading');apt.classList.add('filled');apt.textContent=r;const ct=(CP.ai_prio_ct||0)+1;CP.ai_prio_ct=ct;await sb.from('profiles').update({ai_prio_ct:ct}).eq('id',CU.id)}
+  catch(e){apt.classList.remove('loading');apt.classList.add('filled');apt.textContent=e.message}
+}
+
+async function rPerf(el){
+  el.innerHTML=`<div class="panel-row fade-in"><div><div class="panel-h">${t('pf-h')}</div><div class="panel-sub">${t('pf-s')}</div></div><button class="btn-sm" onclick="genInsight()">↻ ${t('btn-ref')}</button></div><div id="pm" class="metrics fade-in"></div><div class="chart-card-full fade-in"><div class="chart-h"><div><div class="chart-title">${t('cw-t')}</div><div class="chart-sub">${t('cw-s')}</div></div></div><div class="chart-wrap-lg"><canvas id="cv-pw"></canvas></div></div><div class="perf-grid fade-in"><div class="chart-card"><div class="chart-h"><div><div class="chart-title">${t('cd-t')}</div><div class="chart-sub">${t('cd-s')}</div></div></div><div class="chart-wrap"><canvas id="cv-pd"></canvas></div></div><div class="chart-card"><div class="chart-h"><div><div class="chart-title">${t('cf-t')}</div><div class="chart-sub">${t('cf-s')}</div></div></div><div class="chart-wrap"><canvas id="cv-pf"></canvas></div></div></div><div class="card fade-in"><div class="card-head"><div class="card-title">💡 Insights</div><button class="btn-sm" style="font-size:11px" onclick="genInsight()">Refresh</button></div><div class="card-body"><div class="ins-item"><div class="ins-icon ig">↑</div><div class="ins-body"><div class="ins-title">${t('ins-pt')}</div><div class="ins-desc">${t('ins-pd')}</div></div></div><div class="ins-item"><div class="ins-icon ia">!</div><div class="ins-body"><div class="ins-title">${t('ins-ft')}</div><div class="ins-desc">${t('ins-fd')}</div></div></div><div class="ins-item"><div class="ins-icon ib">⏱</div><div class="ins-body"><div class="ins-title">${t('ins-lt')}</div><div class="ins-desc">${t('ins-ld')}</div></div></div><div class="ins-item"><div class="ins-icon" style="background:var(--gold-bg);color:var(--gold)">✦</div><div class="ins-body"><div class="ins-title">AI insight</div><div class="ins-desc" id="ai-ins">${t('ins-ai')}</div></div></div></div></div>`;
+  const[{data:tasks},{data:stats}]=await Promise.all([sb.from('tasks').select('*').eq('user_id',CU.id),sb.from('weekly_stats').select('*').eq('user_id',CU.id)]);
+  const all=tasks||[];const done=all.filter(x=>x.done).length;const active=all.filter(x=>!x.done).length;
+  const rate=all.length?Math.round(done/all.length*100):0;const score=rate>=70?'A':rate>=50?'B+':'C';
+  const pm=document.getElementById('pm');
+  if(pm)pm.innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div><div class="mc-d neu">${t('m-td')}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}%</div></div><div class="mc"><div class="mc-lbl">${t('m-sess')}</div><div class="mc-val">${CP.sessions||7}</div><div class="mc-d neu">${t('m-sd')}</div></div><div class="mc"><div class="mc-lbl">${t('m-score')}</div><div class="mc-val">${score}</div><div class="mc-d pos">${t('m-scd')}</div></div>`;
+  const wData=[0,1,2,3,4,5].map(i=>{const s=(stats||[]).find(s=>s.day_index===i);return s?s.count:0});
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat'];
+  setTimeout(()=>{
+    const cw=document.getElementById('cv-pw');if(cw)charts['pw']=new Chart(cw,{type:'bar',data:{labels:days,datasets:[{label:t('m-done'),data:wData,backgroundColor:'var(--gold)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:bScales()}});
+    const h=all.filter(x=>x.prio==='h').length,m=all.filter(x=>x.prio==='m').length,l=all.filter(x=>x.prio==='l').length;
+    const cd=document.getElementById('cv-pd');if(cd){const{tc}=cDefs();charts['pd']=new Chart(cd,{type:'doughnut',data:{labels:[t('ph'),t('pm'),t('pl')],datasets:[{data:[h||1,m||1,l||1],backgroundColor:['var(--red)','var(--amber)','var(--green)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:tc,padding:10,font:{size:11}}}}}})}
+    const fData=wData.map(v=>+(Math.max(.5,Math.min(5,v*.8+Math.random()*.5)).toFixed(1)));
+    const cf=document.getElementById('cv-pf');if(cf){const{g,tc,font}=cDefs();charts['pf']=new Chart(cf,{type:'line',data:{labels:days,datasets:[{label:t('cf-t'),data:fData,borderColor:'var(--blue)',backgroundColor:'transparent',tension:.4,pointBackgroundColor:'var(--blue)',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:g},ticks:{color:tc,font}},y:{grid:{color:g},ticks:{color:tc,font},min:0,max:5}}}})}
+  },50);
+}
+async function genInsight(){
+  const el=document.getElementById('ai-ins');if(!el)return;
+  const{data:tasks}=await sb.from('tasks').select('*').eq('user_id',CU.id);
+  const all=tasks||[];const done=all.filter(x=>x.done).length;
+  el.textContent=lang==='pt'?'Gerando insight...':lang==='es'?'Generando insight...':'Generating insight...';
+  const p={en:`${all.length} tasks, ${done} completed (${all.length?Math.round(done/all.length*100):0}%). Give me one sharp, actionable productivity insight.`,es:`${all.length} tareas, ${done} completadas. Un insight de productividad en 1-2 oraciones.`,pt:`${all.length} tarefas, ${done} concluídas. Um insight de produtividade prático em 1-2 frases.`};
+  try{const r=await callAI(p[lang]);el.textContent=r}catch(e){el.textContent=e.message}
+}
+
+function rAI(el){
+  const modes=t('ai-modes');
+  el.innerHTML=`<div class="panel-row fade-in"><div><div class="panel-h">${t('ai-h')}</div><div class="panel-sub">${t('ai-s')}</div></div></div><div class="card fade-in"><div class="card-body"><div class="ai-tabs">${modes.map((m,i)=>`<button class="ai-tab ${i===aiTab?'active':''}" onclick="setAiTab(${i},this)">${m}</button>`).join('')}</div><div class="ai-hint" id="ai-hint">${t('ai-hints')[aiTab]}</div><textarea class="ai-ta" id="ai-ta" placeholder="${t('ai-phs')[aiTab]}" rows="4"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn-sm gold" onclick="runAI()">➤ ${t('btn-send')}</button></div><div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px">${t('ai-rl')}</div><div class="ai-resp" id="ai-out">${t('ai-ph')}</div></div></div>`;
+}
+function setAiTab(i,el){
+  aiTab=i;document.querySelectorAll('.ai-tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');
+  const h=document.getElementById('ai-hint');if(h)h.textContent=t('ai-hints')[i];
+  const ta=document.getElementById('ai-ta');if(ta)ta.placeholder=t('ai-phs')[i];
+}
+async function runAI(){
+  const ta=document.getElementById('ai-ta');const v=ta?ta.value.trim():'';if(!v)return;
+  const out=document.getElementById('ai-out');
+  out.textContent='';out.classList.add('loading');out.classList.remove('filled');
+  try{const r=await callAI(v);out.classList.remove('loading');out.classList.add('filled');out.textContent=r}
+  catch(e){out.classList.remove('loading');out.classList.add('filled');out.textContent=e.message}
+}
+
+async function rMeetings(el){
+  el.innerHTML=`<div class="panel-row fade-in"><div><div class="panel-h">${t('mt-h')}</div><div class="panel-sub">${t('mt-s')}</div></div><button class="btn-sm gold" onclick="toggleMF()">+ ${t('new-mt')}</button></div><div class="card fade-in" id="mf" style="display:none"><div class="card-head"><div class="card-title">✦ ${t('mt-h')}</div></div><div class="card-body"><div style="margin-bottom:10px"><input id="mt-ti" style="width:100%;padding:9px 13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;font-family:var(--font-body)" placeholder="Meeting title..."/></div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">${t('mt-hint')}</div><textarea id="mt-tr" rows="5" placeholder="${t('mt-ph')}"></textarea><div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end"><button class="btn-sm" onclick="toggleMF()">Cancel</button><button class="btn-sm gold" onclick="saveMeet()">${t('btn-sum')}</button></div><div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px">${t('mt-ol')}</div><div class="ai-resp" id="mt-out">${t('mt-oph')}</div></div></div><div class="card fade-in"><div class="card-head"><div class="card-title">📋 ${t('mt-h')}</div></div><div class="card-body" id="ml"><div class="empty">Loading...</div></div></div>`;
+  await loadMeetings();
+}
+function toggleMF(){const f=document.getElementById('mf');if(f)f.style.display=f.style.display==='none'?'':'none'}
+async function loadMeetings(){
+  const{data:meets}=await sb.from('meetings').select('*').eq('user_id',CU.id).order('created_at',{ascending:false});
+  const ml=document.getElementById('ml');if(!ml)return;
+  const all=meets||[];
+  ml.innerHTML=all.length?all.map(m=>`<div class="meet-item"><div class="meet-date">${new Date(m.created_at).toLocaleDateString()}</div><div style="flex:1"><div class="meet-name">${m.title}</div><div class="meet-prev">${(m.summary||m.transcript||'').substring(0,120)}...</div></div></div>`).join(''):'<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>No meetings logged yet.</div>';
+}
+async function saveMeet(){
+  const title=document.getElementById('mt-ti')?.value.trim()||'Meeting';
+  const transcript=document.getElementById('mt-tr')?.value.trim();
+  if(!transcript){toast('Paste transcript first');return}
+  const out=document.getElementById('mt-out');
+  out.textContent='';out.classList.add('loading');out.classList.remove('filled');
+  const p={en:`Analyze this meeting:\n1. Executive summary\n2. Key decisions\n3. Action items & owners\n4. Risks identified\n\n${transcript}`,es:`Analiza esta reunión:\n1. Resumen ejecutivo\n2. Decisiones clave\n3. Próximos pasos y responsables\n4. Riesgos\n\n${transcript}`,pt:`Analise esta reunião:\n1. Resumo executivo\n2. Decisões principais\n3. Próximos passos e responsáveis\n4. Riscos identificados\n\n${transcript}`};
+  try{const r=await callAI(p[lang]);out.classList.remove('loading');out.classList.add('filled');out.textContent=r;await sb.from('meetings').insert({user_id:CU.id,title,transcript,summary:r});toast('Meeting saved');await loadMeetings()}
+  catch(e){out.classList.remove('loading');out.classList.add('filled');out.textContent=e.message}
+}
+
+async function rSettings(el){
+  const{data:ks}=await sb.from('shared_settings').select('value').eq('key','groq_key').single();
+  const hasKey=ks&&ks.value;
+  el.innerHTML=`<div class="panel-row fade-in"><div><div class="panel-h">${t('st-h')}</div><div class="panel-sub">${t('st-s')}</div></div></div>
+  <div class="card fade-in"><div class="card-head"><div class="card-title">${t('st-prof')}</div></div><div class="card-body">
+    <div class="set-row"><div><div class="set-lbl">${t('st-name')}</div></div><input type="text" id="sn" value="${CP.name||''}"/></div>
+    <div class="set-row"><div><div class="set-lbl">Email</div></div><input type="text" value="${CU.email}" disabled style="opacity:.5;width:280px;padding:8px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px"/></div>
+    <div class="set-row"><div><div class="set-lbl">${t('st-co')}</div></div><input type="text" id="sc" value="${CP.company||''}" placeholder="Your company..."/></div>
+  </div></div>
+  <div class="card fade-in"><div class="card-head"><div class="card-title">${t('st-ws')}</div></div><div class="card-body">
+    <div class="set-row"><div><div class="set-lbl">Workspace name</div></div><input type="text" id="sw" value="${CP.workspace||''}"/></div>
+    ${CU.email===ADMIN?`<div style="margin-top:8px;padding:14px;background:var(--gold-bg);border-radius:var(--radius);border:1px solid rgba(184,150,62,0.2)">
+      <div style="font-size:11px;font-weight:500;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">⚑ Admin — AI Configuration</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px">Chave compartilhada com todos os usuários. Apenas você vê isso.<br>Obtenha grátis em <a href="https://console.groq.com/keys" target="_blank" style="color:var(--gold);font-weight:500">console.groq.com/keys</a> — começa com <code style="font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:4px">gsk_</code></div>
+      <div style="display:flex;gap:8px;align-items:center"><input type="password" id="sk" value="${hasKey?ks.value:''}" placeholder="gsk_..." style="flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;outline:none;font-family:var(--font-body)"/><button class="btn-sm gold" onclick="testGroq()" id="tgb">Test</button></div>
+      <div id="tgr" style="font-size:11px;margin-top:6px;line-height:1.5">${hasKey?'<span style="color:var(--green)">✓ Key active — AI working for all users</span>':''}</div>
+    </div>`:`<div style="margin-top:8px;padding:12px 14px;background:var(--green-bg);border-radius:var(--radius);border:1px solid rgba(45,106,79,0.15);display:flex;align-items:center;gap:10px"><div style="font-size:18px">⚡</div><div><div style="font-size:12px;font-weight:500;color:var(--green)">IA ${hasKey?'ativa':'não configurada'}</div><div style="font-size:12px;color:var(--text2);margin-top:1px">${hasKey?'Configurada pelo administrador. Pronta para uso.':'Aguardando configuração do administrador.'}</div></div></div>`}
+  </div></div>
+  <div class="card fade-in"><div class="card-head"><div class="card-title">${t('st-app')}</div></div><div class="card-body">
+    <div class="set-row"><div><div class="set-lbl">${t('dark-lbl')}</div><div class="set-desc">${t('dark-d')}</div></div><label class="toggle"><input type="checkbox" ${theme==='dark'?'checked':''} onchange="toggleTheme()"/><span class="toggle-sl"></span></label></div>
+  </div></div>
+  <div style="margin-top:4px;display:flex;justify-content:flex-end"><button class="btn-sm gold" onclick="saveSet()">${t('btn-save')}</button></div>`;
+}
+async function testGroq(){
+  const inp=document.getElementById('sk');const res=document.getElementById('tgr');const btn=document.getElementById('tgb');
+  const key=inp.value.trim();
+  if(!key){res.style.color='var(--red)';res.textContent='Insira a chave primeiro.';return}
+  if(!key.startsWith('gsk_')){res.style.color='var(--amber)';res.textContent='Deve começar com gsk_';return}
+  btn.textContent='...';btn.disabled=true;res.textContent='';
+  try{
+    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:'Hi'}],max_tokens:5})});
+    const d=await r.json();
+    if(d.error){res.style.color='var(--red)';res.textContent='✕ '+(r.status===401?'Chave inválida.':d.error.message)}
+    else{res.style.color='var(--green)';res.textContent='✓ Conectado! IA ativa para todos os usuários.';await sb.from('shared_settings').upsert({key:'groq_key',value:key},{onConflict:'key'});toast('Groq key saved ✓')}
+  }catch(e){res.style.color='var(--red)';res.textContent='Erro de rede.'}
+  btn.textContent='Test';btn.disabled=false;
+}
+async function saveSet(){
+  const updates={};
+  const sn=document.getElementById('sn')?.value.trim();const sc=document.getElementById('sc')?.value.trim();const sw=document.getElementById('sw')?.value.trim();
+  if(sn)updates.name=sn;if(sc)updates.company=sc;if(sw)updates.workspace=sw;
+  if(Object.keys(updates).length){await sb.from('profiles').update(updates).eq('id',CU.id);Object.assign(CP,updates)}
+  if(sn){const ini=sn.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();['top-av','sb-av'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini});const sbn=document.getElementById('sb-name');if(sbn)sbn.textContent=sn}
+  toast(t('btn-save')+' ✓');
+}
+
+async function buildCtx(){
+  const[{data:tasks},{data:meets},{data:stats}]=await Promise.all([
+    sb.from('tasks').select('*').eq('user_id',CU.id).order('created_at'),
+    sb.from('meetings').select('title,summary,created_at').eq('user_id',CU.id).order('created_at',{ascending:false}).limit(5),
+    sb.from('weekly_stats').select('*').eq('user_id',CU.id)
+  ]);
+  const all=tasks||[];const pending=all.filter(x=>!x.done);const done=all.filter(x=>x.done);
+  const high=pending.filter(x=>x.prio==='h');const med=pending.filter(x=>x.prio==='m');const low=pending.filter(x=>x.prio==='l');
+  const rate=all.length?Math.round(done.length/all.length*100):0;
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat'];
+  const weekStr=(stats||[]).sort((a,b)=>a.day_index-b.day_index).map(s=>`${days[s.day_index]||s.day_index}: ${s.count} tasks`).join(', ')||'No data yet';
+  let ctx='\n\n==================================================\nUSER WORKSPACE CONTEXT\n==================================================\n';
+  ctx+=`User: ${CP.name||CU.email} | Workspace: ${CP.workspace||'—'}\n\n`;
+  ctx+=`TASKS:\n- Total: ${all.length} | Completed: ${done.length} | Pending: ${pending.length} | Rate: ${rate}%\n`;
+  ctx+=`- HIGH priority pending (${high.length}): ${high.map(x=>'"'+x.name+'" [due: '+x.date+']').join(', ')||'none'}\n`;
+  ctx+=`- MEDIUM priority pending (${med.length}): ${med.map(x=>'"'+x.name+'" [due: '+x.date+']').join(', ')||'none'}\n`;
+  ctx+=`- LOW priority pending (${low.length}): ${low.map(x=>'"'+x.name+'" [due: '+x.date+']').join(', ')||'none'}\n`;
+  ctx+=`- Completed: ${done.map(x=>'"'+x.name+'"').join(', ')||'none'}\n\n`;
+  ctx+=`WEEKLY PERFORMANCE: ${weekStr}\n\n`;
+  if((meets||[]).length){ctx+=`RECENT MEETINGS:\n`;(meets||[]).forEach(m=>{ctx+=`- "${m.title}" (${new Date(m.created_at).toLocaleDateString()}): ${(m.summary||'').substring(0,200)}\n`})}
+  ctx+='==================================================\n';
+  return ctx;
+}
+async function callAI(prompt){
+  const{data:ks}=await sb.from('shared_settings').select('value').eq('key','groq_key').single();
+  const key=ks?.value||'';
+  if(!key){const m={en:'AI not configured. Contact the workspace admin.',es:'IA no configurada. Contacta al administrador.',pt:'IA não configurada. Contate o administrador.'};throw new Error(m[lang]||m.pt)}
+  const ctx=await buildCtx();
+  const sys=t('sys')+ctx;
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'system',content:sys},{role:'user',content:prompt}],max_tokens:1200})});
+  const data=await res.json();
+  if(data.error)throw new Error(data.error.message||'Groq error');
+  return data.choices?.[0]?.message?.content||'No response.';
+}
+
+let tt;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2800)}
+
+async function init(){
+  const cfg=getCfg();
+  if(!cfg){hideLoad();showScreen('setup');return}
+  sb=supabase.createClient(cfg.url,cfg.key);
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(session)await afterLogin(session.user);
+    else{showScreen('auth');applyAuthI18n()}
+  }catch(e){showScreen('auth');applyAuthI18n()}
+  hideLoad();
+  sb.auth.onAuthStateChange(async(ev,session)=>{if(ev==='SIGNED_OUT'){showScreen('auth');showLogin();applyAuthI18n()}});
+}
+init();
+</script>
+</body>
+</html>
