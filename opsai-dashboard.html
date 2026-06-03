@@ -4,6 +4,18 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>OpsAI — Enterprise Operations Platform</title>
+
+<!-- PWA -->
+<meta name="application-name" content="OpsAI"/>
+<meta name="apple-mobile-web-app-title" content="OpsAI"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#1a1916"/>
+<meta name="description" content="AI-powered operations platform — task management, performance analytics and meeting intelligence."/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%231a1916'/%3E%3Cpolygon points='256,80 420,176 420,336 256,432 92,336 92,176' stroke='%23b8963e' stroke-width='24' fill='none'/%3E%3Ccircle cx='256' cy='256' r='60' fill='%23b8963e'/%3E%3C/svg%3E"/>
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22OpsAI%20Enterprise%22%2C%22short_name%22%3A%22OpsAI%22%2C%22description%22%3A%22AI-powered%20operations%20platform%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%231a1916%22%2C%22theme_color%22%3A%22%231a1916%22%2C%22orientation%22%3A%22any%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%2520viewBox%3D'0%25200%2520512%2520512'%253E%253Crect%2520width%3D'512'%2520height%3D'512'%2520rx%3D'100'%2520fill%3D'%25231a1916'%2F%253E%253Cpolygon%2520points%3D'256%2C80%2520420%2C176%2520420%2C336%2520256%2C432%252092%2C336%252092%2C176'%2520stroke%3D'%2523b8963e'%2520stroke-width%3D'24'%2520fill%3D'none'%2F%253E%253Ccircle%2520cx%3D'256'%2520cy%3D'256'%2520r%3D'60'%2520fill%3D'%2523b8963e'%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D"/>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -443,9 +455,14 @@ create policy "own stats" on public.weekly_stats for all using(auth.uid()=user_i
 <script>
 const ADMIN='deborahcardoso307@gmail.com';
 const CFG_KEY='opsai:sb';
+const DEFAULT_SB_URL='https://ipmnxlgohjbfepmuywpx.supabase.co';
+const DEFAULT_SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwbW54bGdvaGpiZmVwbXV5d3B4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MDQ2MjYsImV4cCI6MjA5NjA4MDYyNn0.NZiCYqZDAaQTCLCeOt5Xg0X1Td_jGi5YbdWhAeXveVw';
 let sb=null,CU=null,CP={},lang='en',theme='light',panel='overview',aiTab=0,charts={};
 
-function getCfg(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'null')}catch{return null}}
+function getCfg(){
+  // Always use the default config — setup screen is bypassed
+  return {url:DEFAULT_SB_URL,key:DEFAULT_SB_KEY};
+}
 function copySql(){navigator.clipboard.writeText(document.getElementById('sql-block').textContent).then(()=>toast('SQL copied!'))}
 
 async function doSetup(){
@@ -1044,7 +1061,6 @@ function toast(m){const el=document.getElementById('toast');el.textContent=m;el.
 
 async function init(){
   const cfg=getCfg();
-  if(!cfg){hideLoad();showScreen('setup');return}
   sb=supabase.createClient(cfg.url,cfg.key);
   try{
     const{data:{session}}=await sb.auth.getSession();
@@ -1055,6 +1071,20 @@ async function init(){
   sb.auth.onAuthStateChange(async(ev,session)=>{if(ev==='SIGNED_OUT'){showScreen('auth');showLogin();applyAuthI18n()}});
 }
 init();
+
+// ── SERVICE WORKER (PWA) ──
+if('serviceWorker' in navigator){
+  const swCode=`
+const CACHE='opsai-v1';
+const ASSETS=['/'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
+self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
+  `;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  const url=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(()=>{});
+}
 </script>
 </body>
 </html>
