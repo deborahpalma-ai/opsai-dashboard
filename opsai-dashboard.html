@@ -751,7 +751,7 @@ function applyAuthI18n(){
   ['hero-h','hero-p','af1','af2','af3','af4'].forEach(id=>{const el=document.getElementById(id);if(!el)return;if(id==='hero-h')el.innerHTML=t(id);else el.textContent=t(id)});
   ['auth-title','auth-sub','lbl-email','lbl-pass','btn-login','reg-title','reg-sub','lbl-name','lbl-remail','lbl-rpass','btn-reg'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id)});
   const sw=document.getElementById('auth-sw');
-  if(sw)sw.innerHTML=t('auth-sw-text')||`${lang==='pt'?"Não tem uma conta?":lang==='es'?"¿No tienes cuenta?":"Don't have an account?"} <a onclick="showReg()">${lang==='pt'?"Crie uma":lang==='es'?"Créala aquí":"Create one"}</a>`;
+  if(sw)sw.innerHTML=`${lang==='pt'?"Não tem uma conta?":lang==='es'?"¿No tienes cuenta?":"Don't have an account?"} <a onclick="showReg()">${lang==='pt'?"Crie uma":lang==='es'?"Créala aquí":"Create one"}</a>`;
 }
 function applyI18n(){
   ['ai-badge-lbl','sb-ws-lbl','sb-mg-lbl','sb-overview','sb-tasks','sb-perf','sb-ai','sb-meet','sb-set','sb-role','sb-logout-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id)});
