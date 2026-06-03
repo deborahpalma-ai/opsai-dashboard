@@ -858,7 +858,7 @@ async function rOverview(el){
   const[{data:tasks},{data:stats}]=await Promise.all([sb.from('tasks').select('*').eq('user_id',CU.id),sb.from('weekly_stats').select('*').eq('user_id',CU.id)]);
   const all=tasks||[];const done=all.filter(x=>x.done).length;const active=all.filter(x=>!x.done).length;
   const rate=all.length?Math.round(done/all.length*100):0;const score=rate>=70?'A':rate>=50?'B+':'C';
-  document.getElementById('ovm').innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div><div class="mc-d neu">${t('m-td')}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}% ${t('m-rate')}</div></div><div class="mc"><div class="mc-lbl">${t('m-sess')}</div><div class="mc-val">—</div><div class="mc-d neu">${t('m-sd')}</div></div><div class="mc"><div class="mc-lbl">${t('m-score')}</div><div class="mc-val">${score}</div><div class="mc-d pos">${t('m-scd')}</div></div>`;
+  document.getElementById('ovm').innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div><div class="mc-d neu">${t('m-td')}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}% ${t('m-rate')}</div></div><div class="mc"><div class="mc-lbl">${t('m-score')}</div><div class="mc-val">${score}</div><div class="mc-d pos">${t('m-scd')}</div></div>`;
   const wData=[0,1,2,3,4,5].map(i=>{const s=(stats||[]).find(s=>s.day_index===i);return s?s.count:0});
   const days=['Mon','Tue','Wed','Thu','Fri','Sat'];
   setTimeout(()=>{
@@ -916,7 +916,7 @@ async function rPerf(el){
   const all=tasks||[];const done=all.filter(x=>x.done).length;const active=all.filter(x=>!x.done).length;
   const rate=all.length?Math.round(done/all.length*100):0;const score=rate>=70?'A':rate>=50?'B+':'C';
   const pm=document.getElementById('pm');
-  if(pm)pm.innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div><div class="mc-d neu">${t('m-td')}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}%</div></div><div class="mc"><div class="mc-lbl">${t('m-sess')}</div><div class="mc-val">—</div><div class="mc-d neu">${t('m-sd')}</div></div><div class="mc"><div class="mc-lbl">${t('m-score')}</div><div class="mc-val">${score}</div><div class="mc-d pos">${t('m-scd')}</div></div>`;
+  if(pm)pm.innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div><div class="mc-d neu">${t('m-td')}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}%</div></div><div class="mc"><div class="mc-lbl">${t('m-score')}</div><div class="mc-val">${score}</div><div class="mc-d pos">${t('m-scd')}</div></div>`;
   const wData=[0,1,2,3,4,5].map(i=>{const s=(stats||[]).find(s=>s.day_index===i);return s?s.count:0});
   const days=['Mon','Tue','Wed','Thu','Fri','Sat'];
   setTimeout(()=>{
