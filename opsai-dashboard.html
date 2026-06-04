@@ -527,7 +527,7 @@ en:{
   'ins-lt':'Focus time below target','ins-ld':'Average daily focus time is below the recommended 3h. Try time-blocking.',
   'ins-ai':'Click Refresh insights to generate a personalized AI analysis of your week.',
   'btn-ref':'Refresh insights',
-  'feat-tasks-t':'Smart task management','feat-tasks-d':'AI auto-prioritizes based on urgency, deadlines and workload.',
+  'feat-cap':'Platform capabilities','feat-tasks-t':'Smart task management','feat-tasks-d':'AI auto-prioritizes based on urgency, deadlines and workload.',
   'feat-meet-t':'Meeting intelligence','feat-meet-d':'Paste any transcript and get summary, actions and risks instantly.',
   'feat-perf-t':'Performance analytics','feat-perf-d':'Automatic pattern detection across your weekly activity.',
   'feat-ai-t':'AI operations assistant','feat-ai-d':'Ask anything - prioritize, plan, draft, analyze.',
@@ -605,7 +605,7 @@ es:{
   'ins-lt':'Tiempo de enfoque bajo objetivo','ins-ld':'El tiempo de enfoque está por debajo de las 3h recomendadas.',
   'ins-ai':'Haz clic en Actualizar insights para generar un análisis personalizado.',
   'btn-ref':'Actualizar insights',
-  'feat-tasks-t':'Gestión inteligente','feat-tasks-d':'La IA prioriza por urgencia, plazos y carga de trabajo.',
+  'feat-cap':'Capacidades de la plataforma','feat-tasks-t':'Gestión inteligente','feat-tasks-d':'La IA prioriza por urgencia, plazos y carga de trabajo.',
   'feat-meet-t':'Inteligencia de reuniones','feat-meet-d':'Transcripción a resumen, acciones y riesgos al instante.',
   'feat-perf-t':'Análisis de rendimiento','feat-perf-d':'Detección automática de patrones en tu actividad semanal.',
   'feat-ai-t':'Asistente IA de operaciones','feat-ai-d':'Pregunta cualquier cosa - prioriza, planifica, redacta, analiza.',
@@ -682,7 +682,7 @@ pt:{
   'ins-lt':'Tempo de foco abaixo do objetivo','ins-ld':'Tempo de foco abaixo das 3h recomendadas. Tente bloquear tempo no calendário.',
   'ins-ai':'Clique em Atualizar insights para gerar uma análise personalizada da sua semana.',
   'btn-ref':'Atualizar insights',
-  'feat-tasks-t':'Gestão inteligente de tarefas','feat-tasks-d':'IA prioriza por urgência, prazos e carga de trabalho.',
+  'feat-cap':'Capacidades da plataforma','feat-tasks-t':'Gestão inteligente de tarefas','feat-tasks-d':'IA prioriza por urgência, prazos e carga de trabalho.',
   'feat-meet-t':'Inteligência de reuniões','feat-meet-d':'Transcrição para resumo, ações e riscos em segundos.',
   'feat-perf-t':'Análise de performance','feat-perf-d':'Detecção automática de padrões na sua atividade semanal.',
   'feat-ai-t':'Assistente IA de operações','feat-ai-d':'Pergunte qualquer coisa - priorize, planeje, rascunhe, analise.',
@@ -855,7 +855,7 @@ function cDefs(){
 function bScales(){const{g,tc,font}=cDefs();return{x:{grid:{color:g,drawBorder:false},ticks:{color:tc,font}},y:{grid:{color:g,drawBorder:false},ticks:{color:tc,font}}}}
 
 async function rOverview(el){
-  el.innerHTML=`<div class="panel-row fade-in"><div><div class="panel-h">${t('ov-h')}</div><div class="panel-sub">${t('ov-s')}</div></div></div><div id="ovm" class="metrics fade-in">${[0,1,2,3].map(()=>'<div class="mc"><div class="mc-lbl">...</div><div class="mc-val">—</div></div>').join('')}</div><div class="charts-grid fade-in"><div class="chart-card"><div class="chart-h"><div><div class="chart-title">${t('cw-t')}</div><div class="chart-sub">${t('cw-s')}</div></div></div><div class="chart-wrap"><canvas id="cv-ow"></canvas></div></div><div class="chart-card"><div class="chart-h"><div><div class="chart-title">${t('cd-t')}</div><div class="chart-sub">${t('cd-s')}</div></div></div><div class="chart-wrap"><canvas id="cv-od"></canvas></div></div></div><div class="card fade-in"><div class="card-head"><div class="card-title">✦ Platform capabilities</div></div><div class="card-body"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">${[['feat-tasks','⚙️'],['feat-meet','🎙️'],['feat-perf','📊'],['feat-ai','✦'],['feat-global','🌐'],['feat-priv','🔒']].map(([k,ic])=>`<div style="padding:16px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border)"><div style="font-size:18px;margin-bottom:8px">${ic}</div><div style="font-size:12px;font-weight:500;margin-bottom:4px">${t(k+'-t')}</div><div style="font-size:12px;color:var(--text2)">${t(k+'-d')}</div></div>`).join('')}</div></div></div>`;
+  el.innerHTML=`<div class="panel-row fade-in"><div><div class="panel-h">${t('ov-h')}</div><div class="panel-sub">${t('ov-s')}</div></div></div><div id="ovm" class="metrics fade-in">${[0,1,2,3].map(()=>'<div class="mc"><div class="mc-lbl">...</div><div class="mc-val">—</div></div>').join('')}</div><div class="charts-grid fade-in"><div class="chart-card"><div class="chart-h"><div><div class="chart-title">${t('cw-t')}</div><div class="chart-sub">${t('cw-s')}</div></div></div><div class="chart-wrap"><canvas id="cv-ow"></canvas></div></div><div class="chart-card"><div class="chart-h"><div><div class="chart-title">${t('cd-t')}</div><div class="chart-sub">${t('cd-s')}</div></div></div><div class="chart-wrap"><canvas id="cv-od"></canvas></div></div></div><div class="card fade-in"><div class="card-head"><div class="card-title">✦ ${t('feat-cap')}</div></div><div class="card-body"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">${[['feat-tasks','⚙️'],['feat-meet','🎙️'],['feat-perf','📊'],['feat-ai','✦'],['feat-global','🌐'],['feat-priv','🔒']].map(([k,ic])=>`<div style="padding:16px;background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border)"><div style="font-size:18px;margin-bottom:8px">${ic}</div><div style="font-size:12px;font-weight:500;margin-bottom:4px">${t(k+'-t')}</div><div style="font-size:12px;color:var(--text2)">${t(k+'-d')}</div></div>`).join('')}</div></div></div>`;
   const[{data:tasks},{data:stats}]=await Promise.all([sb.from('tasks').select('*').eq('user_id',CU.id),sb.from('weekly_stats').select('*').eq('user_id',CU.id)]);
   const all=tasks||[];const done=all.filter(x=>x.done).length;const active=all.filter(x=>!x.done).length;
   const rate=all.length?Math.round(done/all.length*100):0;const score=rate>=70?'A':rate>=50?'B+':'C';
@@ -863,7 +863,7 @@ async function rOverview(el){
   const wData=[0,1,2,3,4,5].map(i=>{const s=(stats||[]).find(s=>s.day_index===i);return s?s.count:0});
   const days=['Mon','Tue','Wed','Thu','Fri','Sat'];
   setTimeout(()=>{
-    const cw=document.getElementById('cv-ow');if(cw)charts['ow']=new Chart(cw,{type:'bar',data:{labels:days,datasets:[{label:t('m-done'),data:wData,backgroundColor:'var(--gold)',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:bScales()}});
+    const cw=document.getElementById('cv-ow');if(cw)charts['ow']=new Chart(cw,{type:'bar',data:{labels:days,datasets:[{label:t('m-done'),data:wData,backgroundColor:'#b8963e',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:bScales()}});
     const h=all.filter(x=>x.prio==='h').length,m=all.filter(x=>x.prio==='m').length,l=all.filter(x=>x.prio==='l').length;
     const cd=document.getElementById('cv-od');if(cd){const{tc}=cDefs();charts['od']=new Chart(cd,{type:'doughnut',data:{labels:[t('ph'),t('pm'),t('pl')],datasets:[{data:[h||1,m||1,l||1],backgroundColor:['var(--red)','var(--amber)','var(--green)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:tc,padding:12,font:{size:11}}}}}})}
   },50);
@@ -921,7 +921,7 @@ async function rPerf(el){
   const wData=[0,1,2,3,4,5].map(i=>{const s=(stats||[]).find(s=>s.day_index===i);return s?s.count:0});
   const days=['Mon','Tue','Wed','Thu','Fri','Sat'];
   setTimeout(()=>{
-    const cw=document.getElementById('cv-pw');if(cw)charts['pw']=new Chart(cw,{type:'bar',data:{labels:days,datasets:[{label:t('m-done'),data:wData,backgroundColor:'var(--gold)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:bScales()}});
+    const cw=document.getElementById('cv-pw');if(cw)charts['pw']=new Chart(cw,{type:'bar',data:{labels:days,datasets:[{label:t('m-done'),data:wData,backgroundColor:'#b8963e',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:bScales()}});
     const h=all.filter(x=>x.prio==='h').length,m=all.filter(x=>x.prio==='m').length,l=all.filter(x=>x.prio==='l').length;
     const cd=document.getElementById('cv-pd');if(cd){const{tc}=cDefs();charts['pd']=new Chart(cd,{type:'doughnut',data:{labels:[t('ph'),t('pm'),t('pl')],datasets:[{data:[h||1,m||1,l||1],backgroundColor:['var(--red)','var(--amber)','var(--green)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:tc,padding:10,font:{size:11}}}}}})}
     const fData=wData.map(v=>+(Math.max(.5,Math.min(5,v*.8+Math.random()*.5)).toFixed(1)));
