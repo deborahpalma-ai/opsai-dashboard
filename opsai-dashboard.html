@@ -389,11 +389,11 @@ create policy "own stats" on public.weekly_stats for all using(auth.uid()=user_i
       <span class="top-name">OpsAI</span><span class="top-tag">Enterprise</span>
     </div>
     <div class="top-center">
-      <button class="top-tab active" onclick="goPanel('overview',this)">Overview</button>
-      <button class="top-tab" onclick="goPanel('tasks',this)">Tasks</button>
-      <button class="top-tab" onclick="goPanel('performance',this)">Performance</button>
-      <button class="top-tab" onclick="goPanel('ai',this)">AI Assistant</button>
-      <button class="top-tab" onclick="goPanel('meetings',this)">Meetings</button>
+      <button class="top-tab active" onclick="goPanel('overview',this)" id="tab-overview">Overview</button>
+      <button class="top-tab" onclick="goPanel('tasks',this)" id="tab-tasks">Tasks</button>
+      <button class="top-tab" onclick="goPanel('performance',this)" id="tab-perf">Performance</button>
+      <button class="top-tab" onclick="goPanel('ai',this)" id="tab-ai">AI Assistant</button>
+      <button class="top-tab" onclick="goPanel('meetings',this)" id="tab-meet">Meetings</button>
     </div>
     <div class="top-right">
       <div class="top-lang">
@@ -756,6 +756,9 @@ function applyAuthI18n(){
 function applyI18n(){
   ['sb-ws-lbl','sb-mg-lbl','sb-overview','sb-tasks','sb-perf','sb-ai','sb-meet','sb-set','sb-role','sb-logout-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id)});
   const ab=document.getElementById('ai-badge-lbl');if(ab)ab.textContent=t('ai-badge');
+  // Top nav tabs
+  const tabMap={'tab-overview':'sb-overview','tab-tasks':'sb-tasks','tab-perf':'sb-perf','tab-ai':'sb-ai','tab-meet':'sb-meet'};
+  Object.entries(tabMap).forEach(([tabId,key])=>{const el=document.getElementById(tabId);if(el)el.textContent=t(key)});
 }
 
 function showScreen(n){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen-'+n))}
