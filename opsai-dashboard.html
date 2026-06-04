@@ -404,7 +404,7 @@ create policy "own stats" on public.weekly_stats for all using(auth.uid()=user_i
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">
         <svg id="theme-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       </button>
-      <div class="ai-badge"><div class="ai-dot"></div><span id="ai-badge-lbl">AI online</span></div>
+      <div class="ai-badge"><div class="ai-dot"></div><span id="ai-badge-lbl" data-k="ai-badge">AI online</span></div>
       <div class="uavatar" id="top-av" onclick="goPanel('settings',null)">U</div>
     </div>
   </div>
@@ -504,8 +504,8 @@ en:{
   'ai-h':'AI Assistant','ai-s':'Groq-powered operations intelligence',
   'mt-h':'Meeting intelligence','mt-s':'Transcript to insights in seconds',
   'st-h':'Settings','st-s':'Workspace preferences',
-  'm-tasks':'Active tasks','m-done':'Completed','m-sess':'Focus sessions','m-score':'AI score',
-  'm-td':'this week','m-rate':'completion rate','m-sd':'avg 42 min','m-scd':'productivity index',
+  'm-tasks':'Active tasks','m-done':'Completed','m-high':'High priority','m-aip':'AI prioritized','m-score':'AI score',
+  'm-td':'this week','m-rate':'completion rate','m-scd':'productivity index',
   'cw-t':'Weekly output','cw-s':'Tasks completed per day',
   'cd-t':'Task distribution','cd-s':'By priority',
   'cf-t':'Focus time','cf-s':'Daily hours in deep work',
@@ -582,8 +582,8 @@ es:{
   'ai-h':'Asistente IA','ai-s':'Inteligencia operacional con Groq',
   'mt-h':'Inteligencia de reuniones','mt-s':'Transcripción a insights en segundos',
   'st-h':'Configuración','st-s':'Preferencias del workspace',
-  'm-tasks':'Tareas activas','m-done':'Completadas','m-sess':'Sesiones de foco','m-score':'Score IA',
-  'm-td':'esta semana','m-rate':'tasa de completado','m-sd':'prom. 42 min','m-scd':'índice de productividad',
+  'm-tasks':'Tareas activas','m-done':'Completadas','m-high':'Alta prioridad','m-aip':'Priorizadas por IA','m-score':'Score IA',
+  'm-td':'esta semana','m-rate':'tasa de completado','m-scd':'índice de productividad',
   'cw-t':'Producción semanal','cw-s':'Tareas completadas por día',
   'cd-t':'Distribución de tareas','cd-s':'Por prioridad',
   'cf-t':'Tiempo de enfoque','cf-s':'Horas diarias en trabajo profundo',
@@ -659,8 +659,8 @@ pt:{
   'ai-h':'Assistente IA','ai-s':'Inteligência operacional com Groq',
   'mt-h':'Inteligência de reuniões','mt-s':'Transcrição para insights em segundos',
   'st-h':'Configurações','st-s':'Preferências do workspace',
-  'm-tasks':'Tarefas ativas','m-done':'Concluídas','m-sess':'Sessões de foco','m-score':'Score IA',
-  'm-td':'esta semana','m-rate':'taxa de conclusão','m-sd':'média 42 min','m-scd':'índice de produtividade',
+  'm-tasks':'Tarefas ativas','m-done':'Concluídas','m-high':'Alta prioridade','m-aip':'Priorizadas por IA','m-score':'Score IA',
+  'm-td':'esta semana','m-rate':'taxa de conclusão','m-scd':'índice de produtividade',
   'cw-t':'Produção semanal','cw-s':'Tarefas concluídas por dia',
   'cd-t':'Distribuição de tarefas','cd-s':'Por prioridade',
   'cf-t':'Tempo de foco','cf-s':'Horas diárias em trabalho profundo',
@@ -754,7 +754,8 @@ function applyAuthI18n(){
   if(sw)sw.innerHTML=`${lang==='pt'?"Não tem uma conta?":lang==='es'?"¿No tienes cuenta?":"Don't have an account?"} <a onclick="showReg()">${lang==='pt'?"Crie uma":lang==='es'?"Créala aquí":"Create one"}</a>`;
 }
 function applyI18n(){
-  ['ai-badge-lbl','sb-ws-lbl','sb-mg-lbl','sb-overview','sb-tasks','sb-perf','sb-ai','sb-meet','sb-set','sb-role','sb-logout-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id)});
+  ['sb-ws-lbl','sb-mg-lbl','sb-overview','sb-tasks','sb-perf','sb-ai','sb-meet','sb-set','sb-role','sb-logout-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id)});
+  const ab=document.getElementById('ai-badge-lbl');if(ab)ab.textContent=t('ai-badge');
 }
 
 function showScreen(n){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id==='screen-'+n))}
@@ -877,7 +878,7 @@ async function loadTasks(){
   const all=tasks||[];const done=all.filter(x=>x.done).length;const active=all.filter(x=>!x.done).length;
   const high=all.filter(x=>x.prio==='h'&&!x.done).length;const rate=all.length?Math.round(done/all.length*100):0;
   const tm=document.getElementById('tm');
-  if(tm)tm.innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}%</div></div><div class="mc"><div class="mc-lbl">High priority</div><div class="mc-val">${high}</div><div class="mc-d ${high>0?'neg':'pos'}">${high>0?'⚠':'✓'}</div></div><div class="mc"><div class="mc-lbl">AI prioritized</div><div class="mc-val">${CP.ai_prio_ct||0}</div></div>`;
+  if(tm)tm.innerHTML=`<div class="mc"><div class="mc-lbl">${t('m-tasks')}</div><div class="mc-val">${active}</div></div><div class="mc"><div class="mc-lbl">${t('m-done')}</div><div class="mc-val">${done}</div><div class="mc-d ${rate>=50?'pos':'neu'}">${rate}%</div></div><div class="mc"><div class="mc-lbl">${t('m-high')}</div><div class="mc-val">${high}</div><div class="mc-d ${high>0?'neg':'pos'}">${high>0?'⚠':'✓'}</div></div><div class="mc"><div class="mc-lbl">${t('m-aip')}</div><div class="mc-val">${CP.ai_prio_ct||0}</div></div>`;
   const tl=document.getElementById('tl');if(!tl)return;
   if(!all.length){tl.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Add your first task below</div>';return}
   tl.innerHTML=all.map(tk=>`<div class="task-item"><div class="t-check ${tk.done?'done':''}" onclick="toggleTask('${tk.id}',${tk.done})"></div><div class="t-content"><div class="t-name ${tk.done?'done':''}">${tk.name}</div><div class="t-meta"><span class="tag tag-${tk.prio}">${t('p'+tk.prio)}</span><span class="tag-date">${t(tk.date)||tk.date}</span></div></div><div class="t-actions"><button class="t-btn del" onclick="delTask('${tk.id}')">✕</button></div></div>`).join('');
