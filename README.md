@@ -9,12 +9,14 @@ Priority levels (High, Medium, Low)
 Task completion tracking
 AI-powered task prioritization
 Smart scheduling suggestions
+
 📊 Performance Analytics
 Productivity dashboard
 Weekly performance tracking
 Task completion metrics
 Focus-time analysis
 Visual reports with charts
+
 🤖 AI Assistant
 Task prioritization
 Productivity recommendations
@@ -27,16 +29,19 @@ Automatic summaries
 Action item extraction
 Decision tracking
 Operational insights generation
+
 🌎 Global Ready
 English
 Portuguese
 Spanish
+
 🎨 Modern Experience
 Elegant enterprise UI
 Responsive design
 Dark Mode
 Mobile-friendly experience
 Progressive Web App (PWA)
+
 🛠 Technologies Used
 Frontend
 HTML5
@@ -51,24 +56,26 @@ Data Visualization
 Chart.js
 Deployment
 Vercel
+
 📸 Application Modules
-Dashboard Overview
+
+- Dashboard Overview
 
 Monitor operational performance through real-time metrics and analytics.
 
-Task Manager
+- Task Manager
 
 Manage activities with intelligent prioritization and productivity tracking.
 
-AI Assistant
+- AI Assistant
 
 Receive recommendations and operational support powered by artificial intelligence.
 
-Meeting Intelligence
+- Meeting Intelligence
 
 Transform meeting notes into actionable summaries and insights.
 
-Settings & Personalization
+- Settings & Personalization
 
 Customize language preferences, appearance, and workspace configurations.
 
