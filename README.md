@@ -2,7 +2,8 @@ OpsAI is an AI-powered operations platform designed to help professionals and te
 
 Built as a complete SaaS application, OpsAI combines productivity management, analytics, and artificial intelligence into a single modern workspace.
 
-✨ Features
+✨ Features:
+
 📋 Task Management
 Create, edit, and organize tasks
 Priority levels (High, Medium, Low)
@@ -23,6 +24,7 @@ Productivity recommendations
 Operational insights
 Email drafting
 Meeting summarization
+
 🎙 Meeting Intelligence
 Meeting transcript processing
 Automatic summaries
@@ -90,5 +92,5 @@ Secure cloud storage
 
 Each user only has access to their own data.
 
-🔗 Application:
+🔗 App:
 https://opsai-dashboard-tau.vercel.app/
